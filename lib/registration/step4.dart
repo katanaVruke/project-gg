@@ -51,13 +51,14 @@ class _Step4State extends State<Step4> {
 
   double getIdealWeight() {
     if (widget.selectedHeight == null || widget.selectedGender == null) return 0.0;
-
     final height = widget.selectedHeight!;
+    double idealWeight;
     if (widget.selectedGender == 'male') {
-      return height - (100 + (height - 100) / 20);
+      idealWeight = height - (100 + (height - 100) / 20);
     } else {
-      return height - (100 + (height - 100) / 10);
+      idealWeight = height - (100 + (height - 100) / 10);
     }
+    return idealWeight < 30.0 ? 30.0 : idealWeight;
   }
 
   Color getWeightColor() {

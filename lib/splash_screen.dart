@@ -1,8 +1,12 @@
 // lib/splash_screen.dart
+import 'package:Elite_KA/Hub/HubMain.dart';
+import 'package:Elite_KA/registration/auth_screen.dart';
+import 'package:Elite_KA/registration/registration.dart';
+import 'package:Elite_KA/supabase/supabase_helper.dart';
+import 'package:Elite_KA/supabase/supabase_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'Hub/HubMain.dart';
-import 'registration/registration.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(seconds: 2),
+      duration: const Duration(seconds: 1),
       vsync: this,
     );
 
@@ -32,24 +36,99 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _animationController.forward();
 
-    Future.delayed(const Duration(seconds: 2), () {
-      _checkUserDataAndNavigate();
+    Future.delayed(const Duration(seconds: 1), () {
+      _checkUserStatusAndNavigate();
     });
   }
 
-  Future<void> _checkUserDataAndNavigate() async {
-    final prefs = await SharedPreferences.getInstance();
+  Future<void> _checkUserStatusAndNavigate() async {
+    final user = SupabaseHelper.client.auth.currentUser;
 
-    final hasUser = prefs.getString('selectedGender') != null;
+    if (user != null) {
+      await _loadUserDataFromSupabase();
 
-    if (hasUser) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HubMain()),
-      );
+      final _ = await SharedPreferences.getInstance();
+      final isRegistrationComplete = await _isRegistrationComplete(user.id);
+
+      if (mounted) {
+        if (isRegistrationComplete) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const HubMain()),
+          );
+        } else {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const RegistrationScreen()),
+          );
+        }
+      }
     } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const RegistrationScreen()),
-      );
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const AuthScreen()),
+        );
+      }
+    }
+  }
+
+  Future<void> _loadUserDataFromSupabase() async {
+    final user = SupabaseHelper.client.auth.currentUser;
+    if (user != null) {
+      try {
+        final userProfile = await SupabaseService.getUserProfile(user.id);
+        if (userProfile != null) {
+          final prefs = await SharedPreferences.getInstance();
+
+          await prefs.setString('selectedGender', userProfile['selected_gender'] ?? '');
+          await prefs.setInt('selectedAge', userProfile['selected_age'] ?? 0);
+          await prefs.setDouble('selectedHeight', userProfile['selected_height']?.toDouble() ?? 0.0);
+          await prefs.setDouble('selectedWeight', userProfile['selected_weight']?.toDouble() ?? 0.0);
+          await prefs.setString('selectedFatPercentage', userProfile['selected_fat_percentage'] ?? '');
+          await prefs.setStringList('selectedEquipment', userProfile['selected_equipment']?.cast<String>() ?? []);
+          await prefs.setBool('isRegistrationComplete', true);
+        }
+
+        final goalsActivities = await SupabaseService.getUserGoalsAndActivities(user.id);
+        if (goalsActivities != null) {
+          final prefs = await SharedPreferences.getInstance();
+
+          if (goalsActivities.containsKey('selected_target')) {
+            await prefs.setString('selectedTarget', goalsActivities['selected_target'] ?? '');
+          }
+          if (goalsActivities.containsKey('selected_activity_level')) {
+            await prefs.setString('selectedActivityLevel', goalsActivities['selected_activity_level'] ?? '');
+          }
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Ошибка при загрузке пользовательских данных из Supabase: $e');
+        }
+      }
+    }
+  }
+
+  Future<bool> _isRegistrationComplete(String userId) async {
+    try {
+      final userProfile = await SupabaseService.getUserProfile(userId);
+      if (userProfile != null) {
+        final hasGender = userProfile['selected_gender'] != null &&
+            userProfile['selected_gender'] != '' &&
+            userProfile['selected_gender'] != 'EMPTY';
+        final hasAge = userProfile['selected_age'] != null && userProfile['selected_age'] != 0;
+        final hasHeight = userProfile['selected_height'] != null && userProfile['selected_height'] != 0.0;
+        final hasWeight = userProfile['selected_weight'] != null && userProfile['selected_weight'] != 0.0;
+        final hasFatPercentage = userProfile['selected_fat_percentage'] != null &&
+            userProfile['selected_fat_percentage'] != '' &&
+            userProfile['selected_fat_percentage'] != 'EMPTY';
+        final hasEquipment = userProfile['selected_equipment'] != null &&
+            userProfile['selected_equipment'].length > 0;
+        return hasGender && hasAge && hasHeight && hasWeight && hasFatPercentage && hasEquipment;
+      }
+      return false;
+    } catch (e) {
+      if (kDebugMode) {
+        print('Ошибка при проверке статуса регистрации: $e');
+      }
+      return false;
     }
   }
 

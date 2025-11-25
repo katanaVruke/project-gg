@@ -16,9 +16,9 @@ class _TargetPageState extends State<TargetPage> {
 
   final Map<String, IconData> targetIcons = {
     'Набор мышечной массы': Icons.fitness_center,
-    'Похудение(Резкое)': Icons.scale,
-    'Похудение(Умеренное)': Icons.scale,
-    'Улучшения Здоровья': Icons.favorite,
+    'Сушка': Icons.scale,
+    'Похудение': Icons.scale,
+    'Поддержание веса': Icons.favorite,
   };
 
   @override

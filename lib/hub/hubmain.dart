@@ -1,11 +1,13 @@
-// lib/Hub/HubMain.dart
+// lib/hub/hubMain.dart
+import 'package:Elite_KA/Hub/Achievements.dart';
+import 'package:Elite_KA/Hub/HubFive/HubFive.dart';
+import 'package:Elite_KA/Hub/HubFour/HubFour.dart';
+import 'package:Elite_KA/Hub/HubOne/HubOne.dart';
+import 'package:Elite_KA/Hub/HubThree/HubThree.dart';
+import 'package:Elite_KA/Hub/HubTwo/HubTwo.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:Elite_KA/Hub/HubOne/HubOne.dart';
-import 'HubTwo/HubTwo.dart';
-import 'HubThree/HubThree.dart';
-import 'HubFour/HubFour.dart';
-import 'HubFive/HubFive.dart';
+import 'package:collection/collection.dart';
 
 class HubMain extends StatefulWidget {
   const HubMain({super.key});
@@ -16,6 +18,8 @@ class HubMain extends StatefulWidget {
 
 class _HubMainState extends State<HubMain> {
   int _selectedIndex = 0;
+
+  static const int _achievementsIndex = 5;
 
   String? selectedGender;
   int? selectedAge;
@@ -30,7 +34,11 @@ class _HubMainState extends State<HubMain> {
     const HubThree(),
     const HubFour(),
     const HubFive(),
+    const Achievements(),
   ];
+
+  final List<int> _secretCombination = [2, 1, 3, 4, 4, 0];
+  List<int> _currentSequence = [];
 
   @override
   void initState() {
@@ -51,15 +59,52 @@ class _HubMainState extends State<HubMain> {
     });
   }
 
+  void _handleNavigationTap(int index) {
+    if (_selectedIndex == _achievementsIndex) {
+      setState(() {
+        _selectedIndex = index;
+      });
+      return;
+    }
+
+    _currentSequence.add(index);
+
+    if (_currentSequence.length > _secretCombination.length) {
+      _currentSequence = _currentSequence
+          .sublist(_currentSequence.length - _secretCombination.length);
+    }
+
+    if (_currentSequence.length == _secretCombination.length &&
+        ListEquality().equals(_currentSequence, _secretCombination)) {
+      _currentSequence.clear();
+      setState(() {
+        _selectedIndex = _achievementsIndex;
+      });
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return false;
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        if (_selectedIndex == _achievementsIndex) {
+          setState(() {
+            _selectedIndex = 0;
+          });
+        }
       },
       child: Scaffold(
         body: _pages[_selectedIndex],
-        bottomNavigationBar: Container(
+        bottomNavigationBar: _selectedIndex == _achievementsIndex
+            ? null
+            : Container(
           decoration: BoxDecoration(
             color: Colors.black,
             border: Border(
@@ -74,11 +119,7 @@ class _HubMainState extends State<HubMain> {
             selectedLabelStyle: const TextStyle(color: Colors.red),
             unselectedLabelStyle: const TextStyle(color: Colors.grey),
             currentIndex: _selectedIndex,
-            onTap: (index) {
-              setState(() {
-                _selectedIndex = index;
-              });
-            },
+            onTap: _handleNavigationTap,
             items: const [
               BottomNavigationBarItem(
                 icon: Icon(Icons.person),

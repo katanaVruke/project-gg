@@ -1,12 +1,14 @@
 // lib/registration/registration.dart
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:Elite_KA/registration/Step1.dart';
 import 'package:Elite_KA/registration/Step2.dart';
 import 'package:Elite_KA/registration/Step3.dart';
 import 'package:Elite_KA/registration/Step4.dart';
 import 'package:Elite_KA/registration/Step5.dart';
 import 'package:Elite_KA/registration/Step6.dart';
+import 'package:Elite_KA/supabase/supabase_helper.dart';
+import 'package:Elite_KA/supabase/supabase_service.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 String? selectedGender;
 int? selectedAge;
@@ -29,22 +31,22 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
         if (_currentStep > 1) {
           setState(() {
             _currentStep -= 1;
           });
-          return false;
         }
-        return true;
       },
       child: Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(
           backgroundColor: Colors.black,
           elevation: 0,
-          title: const Text('Регистрация', style: TextStyle(color: Colors.white)),
+          title: const Text('Заполнение данных', style: TextStyle(color: Colors.white)),
           centerTitle: true,
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(8),
@@ -157,6 +159,20 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             await prefs.setString('selectedFatPercentage', selectedFatPercentage ?? '');
             await prefs.setStringList('selectedEquipment', selectedEquipment ?? []);
 
+            final user = SupabaseHelper.client.auth.currentUser;
+            if (user != null) {
+              await SupabaseService.updateUserProfile(
+                user.id,
+                selectedGender: selectedGender,
+                selectedAge: selectedAge,
+                selectedHeight: selectedHeight,
+                selectedWeight: selectedWeight,
+                selectedFatPercentage: selectedFatPercentage,
+                selectedEquipment: selectedEquipment,
+              );
+
+              await prefs.setBool('isRegistrationComplete', true);
+            }
           },
           onGoBack: () {
             setState(() {

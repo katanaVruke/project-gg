@@ -34,7 +34,7 @@ class _ToolsPageState extends State<ToolsPage> {
         {'name': 'Скамья скотта'},
         {'name': 'Скамья для гиперэкстензии'},
         {'name': 'Перекладина для подтягиваний'},
-        {'name': 'Перекладина для подтягиваний+'},
+        {'name': 'Перекладина для подтягиваний с подпоркой'},
         {'name': 'Стойка для махов'},
         {'name': 'Стойка для махов с подпоркой'},
       ],
@@ -45,7 +45,7 @@ class _ToolsPageState extends State<ToolsPage> {
       'items': [
         {'name': 'Тренажёр для жима ногами'},
         {'name': 'Тренажёр для икроножных мышц'},
-        {'name': 'Сидячий тренажёр для бедёр'},
+        {'name': 'Сидячий тренажёр для бедренных мышц'},
         {'name': 'Тренажёр для приседаний с упором'},
         {'name': 'Тренажёр для сгибания ног'},
         {'name': 'Тренажёр для экстензии ног'},
@@ -53,14 +53,14 @@ class _ToolsPageState extends State<ToolsPage> {
         {'name': 'Тренажёр смита'},
         {'name': 'Тренажёр для скручивания'},
         {'name': 'Тренажёр для дельтовидных мышц'},
-        {'name': 'Тренажёр для сгибания рук'},
+        {'name': 'Тренажёр для изолированного сгибания рук'},
         {'name': 'Тренажёр для разведения рук'},
         {'name': 'Тренажёр для экстензии трицепсов'},
-        {'name': 'Наклонный тренажёр для груди'},
+        {'name': 'Наклонный тренажёр для грудных мышц'},
         {'name': 'Тренажёр для грудных мышц'},
         {'name': 'Тренажёр для сведения рук'},
-        {'name': 'Тяга вертикального блока'},
-        {'name': 'Тяга горизонтального блока'},
+        {'name': 'Тренажёр для тяги вертикального блока'},
+        {'name': 'Тренажёр для тяги горизонтального блока'},
       ],
     },
     {
@@ -112,7 +112,25 @@ class _ToolsPageState extends State<ToolsPage> {
         _selectedEquipment.add(itemName);
       }
     });
-    _saveSelectedEquipment();
+  }
+
+  double _calculateFontSize(double baseFontSize, BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    const baseScreenHeight = 800.0;
+    const baseScreenWidth = 360.0;
+
+    final heightScale = screenHeight / baseScreenHeight;
+    final widthScale = screenWidth / baseScreenWidth;
+
+    final scaleRatio = (heightScale < widthScale) ? heightScale : widthScale;
+
+    final scaledFontSize = baseFontSize * scaleRatio;
+    final maxFontSize = baseFontSize * 1.2;
+    final minFontSize = baseFontSize * 0.8;
+
+    return scaledFontSize.clamp(minFontSize, maxFontSize);
   }
 
   @override
@@ -120,14 +138,14 @@ class _ToolsPageState extends State<ToolsPage> {
     final screenHeight = MediaQuery.of(context).size.height;
     final isSmallScreen = screenHeight < 700;
 
-    final appBarFontSize = isSmallScreen ? 18.0 : 20.0;
-    final tabFontSize = isSmallScreen ? 12.0 : 14.0;
-    final itemFontSize = isSmallScreen ? 14.0 : 16.0;
-    final buttonFontSize = isSmallScreen ? 14.0 : 16.0;
+    final appBarFontSize = _calculateFontSize(isSmallScreen ? 18.0 : 20.0, context);
+    final tabFontSize = _calculateFontSize(isSmallScreen ? 12.0 : 14.0, context);
+    final itemFontSize = _calculateFontSize(isSmallScreen ? 14.0 : 16.0, context);
+    final buttonFontSize = _calculateFontSize(isSmallScreen ? 14.0 : 16.0, context);
     final paddingValue = isSmallScreen ? 16.0 : 20.0;
     final tabHeight = isSmallScreen ? 50.0 : 56.0;
-    final iconSize = isSmallScreen ? 18.0 : 20.0;
-    final checkIconSize = isSmallScreen ? 20.0 : 24.0;
+    final iconSize = _calculateFontSize(isSmallScreen ? 18.0 : 20.0, context);
+    final checkIconSize = _calculateFontSize(isSmallScreen ? 20.0 : 24.0, context);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -137,10 +155,12 @@ class _ToolsPageState extends State<ToolsPage> {
           icon: Icon(
             Icons.arrow_back,
             color: Colors.white,
-            size: isSmallScreen ? 20 : 24,
+            size: _calculateFontSize(isSmallScreen ? 20 : 24, context),
           ),
           onPressed: () {
-            Navigator.pop(context);
+            // Сохраняем изменения перед возвратом
+            _saveSelectedEquipment();
+            Navigator.pop(context, _selectedEquipment.toList());
           },
         ),
         title: Text(
@@ -257,12 +277,16 @@ class _ToolsPageState extends State<ToolsPage> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                item['name'],
-                                style: TextStyle(
-                                  fontSize: itemFontSize,
-                                  color: Colors.white,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              Expanded(
+                                child: Text(
+                                  item['name'],
+                                  style: TextStyle(
+                                    fontSize: itemFontSize,
+                                    color: Colors.white,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                  softWrap: true,
+                                  overflow: TextOverflow.visible,
                                 ),
                               ),
                               if (isSelected)
@@ -290,7 +314,9 @@ class _ToolsPageState extends State<ToolsPage> {
                     alignment: Alignment.center,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.pop(context);
+                        // Сохраняем изменения перед возвратом
+                        _saveSelectedEquipment();
+                        Navigator.pop(context, _selectedEquipment.toList());
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
@@ -315,7 +341,7 @@ class _ToolsPageState extends State<ToolsPage> {
                   Text(
                     'Выбрано ${_selectedEquipment.length}',
                     style: TextStyle(
-                      fontSize: isSmallScreen ? 14 : 16,
+                      fontSize: _calculateFontSize(isSmallScreen ? 14 : 16, context),
                       color: Colors.white,
                     ),
                   ),

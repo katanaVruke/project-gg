@@ -1,4 +1,4 @@
-// lib/steps/Step1.dart
+// lib/steps/step1.dart
 import 'package:flutter/material.dart';
 
 class Step1 extends StatelessWidget {
@@ -110,36 +110,6 @@ class Step1 extends StatelessWidget {
               ),
             ),
             SizedBox(height: isSmallScreen ? 6 : 8),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                return ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '',
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 12 : 14,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_ios,
-                            size: isSmallScreen ? 14 : 16,
-                            color: Colors.white,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
           ],
         ),
       ],

@@ -1,6 +1,9 @@
 // lib/registration/step6.dart
-import 'package:Elite_KA/splash_screen_two.dart';
+import 'package:Elite_KA/splash_screen.dart';
+import 'package:Elite_KA/supabase/supabase_helper.dart';
+import 'package:Elite_KA/supabase/supabase_service.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Step6 extends StatefulWidget {
   final void Function(List<String>) onEquipmentSelected;
@@ -93,6 +96,14 @@ class _Step6State extends State<Step6> {
           }
         }
       }
+    }
+  }
+
+  void _navigateToSplashScreen() {
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const SplashScreen()),
+      );
     }
   }
 
@@ -206,7 +217,7 @@ class _Step6State extends State<Step6> {
         Center(
           child: ElevatedButton(
             onPressed: _isNoneSelected || _selectedCategories.isNotEmpty
-                ? () {
+                ? () async {
               final selectedEquipment = <String>{};
 
               if (_isNoneSelected) {
@@ -223,11 +234,22 @@ class _Step6State extends State<Step6> {
                 }
               }
 
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setStringList('selectedEquipment', selectedEquipment.toList());
+
+              final user = SupabaseHelper.client.auth.currentUser;
+              if (user != null) {
+                await SupabaseService.updateUserProfile(
+                  user.id,
+                  selectedEquipment: selectedEquipment.toList(),
+                );
+              }
+
               widget.onEquipmentSelected(selectedEquipment.toList());
 
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => const SplashScreen()),
-              );
+              await prefs.setBool('isRegistrationComplete', true);
+
+              _navigateToSplashScreen();
             }
                 : null,
             style: ElevatedButton.styleFrom(

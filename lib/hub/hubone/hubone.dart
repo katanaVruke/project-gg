@@ -1,10 +1,13 @@
-// lib/hub//hubone/hubone.dart
+// lib/hub/hubone/hubone.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'ProfilePage.dart';
 import 'Policy.dart';
 import 'package:Elite_KA/splash_screen.dart';
+import '../../supabase/supabase_service.dart';
+import '../../supabase/supabase_helper.dart';
 
 class HubOne extends StatefulWidget {
   const HubOne({super.key});
@@ -15,6 +18,28 @@ class HubOne extends StatefulWidget {
 
 class _HubOneState extends State<HubOne> {
   String appVersion = "Version 1.0.0";
+  String? _userEmail;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserEmail();
+  }
+
+  Future<void> _loadUserEmail() async {
+    try {
+      final user = SupabaseHelper.client.auth.currentUser;
+      if (user != null) {
+        setState(() {
+          _userEmail = user.email;
+        });
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error loading user email: $e');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +70,59 @@ class _HubOneState extends State<HubOne> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Отображение текущей почты
+              if (_userEmail != null) ...[
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[900],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  padding: EdgeInsets.all(paddingValue),
+                  margin: EdgeInsets.only(bottom: heightValue * 0.75),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: isSmallScreen ? 36 : 40,
+                        height: isSmallScreen ? 36 : 40,
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.email,
+                          color: Colors.black,
+                          size: isSmallScreen ? 20 : 24,
+                        ),
+                      ),
+                      SizedBox(width: isSmallScreen ? 12 : 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Текущая почта',
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 14 : 16,
+                                color: Colors.grey[400],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              _userEmail!,
+                              style: TextStyle(
+                                fontSize: isSmallScreen ? 16 : 18,
+                                color: Colors.white,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
@@ -86,7 +164,7 @@ class _HubOneState extends State<HubOne> {
                   ],
                 ),
               ),
-              SizedBox(height: heightValue * 1.5),
+              SizedBox(height: heightValue * 0.75), // Одинаковый отступ
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
@@ -107,18 +185,9 @@ class _HubOneState extends State<HubOne> {
                     SizedBox(height: heightValue),
                     _buildContactItem(
                       icon: Icons.telegram,
-                      title: '@k1t3q',
+                      title: '@exp206',
                       onTap: () {
-                        _launchTelegram('https://t.me/skotchnaebalo');
-                      },
-                      isSmallScreen: isSmallScreen,
-                    ),
-                    SizedBox(height: isSmallScreen ? 8 : 10),
-                    _buildContactItem(
-                      icon: Icons.telegram,
-                      title: '@I_want_a_fundy',
-                      onTap: () {
-                        _launchTelegram('https://t.me/I_want_a_fundy');
+                        _launchTelegram('https://t.me/exp206');
                       },
                       isSmallScreen: isSmallScreen,
                     ),
@@ -163,12 +232,12 @@ class _HubOneState extends State<HubOne> {
               width: isSmallScreen ? 36 : 40,
               height: isSmallScreen ? 36 : 40,
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.2),
+                color: Colors.red,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
-                color: Colors.red,
+                color: Colors.black,
                 size: isSmallScreen ? 20 : 24,
               ),
             ),
@@ -206,12 +275,12 @@ class _HubOneState extends State<HubOne> {
               width: isSmallScreen ? 36 : 40,
               height: isSmallScreen ? 36 : 40,
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.2),
+                color: Colors.red,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
                 icon,
-                color: Colors.red,
+                color: Colors.black,
                 size: isSmallScreen ? 20 : 24,
               ),
             ),
@@ -238,7 +307,24 @@ class _HubOneState extends State<HubOne> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Не удалось открыть ссылку')),
+        SnackBar(
+          backgroundColor: Colors.grey[900]!,
+          content: Center(
+            child: Text(
+              'Не удалось открыть',
+              style: TextStyle(
+                color: Colors.red,
+                fontSize: 14.0,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
       );
     }
   }
@@ -281,6 +367,16 @@ class _HubOneState extends State<HubOne> {
                     () {
                   Navigator.pop(context);
                   _showDeleteDataConfirmationDialog(context);
+                },
+                isSmallScreen,
+              ),
+              SizedBox(height: isSmallScreen ? 8 : 10),
+              _buildDialogButton(
+                'Выйти',
+                Icons.exit_to_app,
+                    () {
+                  Navigator.pop(context);
+                  _signOut();
                 },
                 isSmallScreen,
               ),
@@ -373,13 +469,7 @@ class _HubOneState extends State<HubOne> {
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.clear();
-
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const SplashScreen()),
-                      (route) => false,
-                );
+                await _deleteAllUserData();
               },
               child: Text(
                 'ОК',
@@ -390,5 +480,68 @@ class _HubOneState extends State<HubOne> {
         );
       },
     );
+  }
+
+  Future<void> _deleteAllUserData() async {
+    try {
+      // Очищаем данные в Supabase
+      final user = SupabaseHelper.client.auth.currentUser;
+      if (user != null) {
+        await SupabaseService.clearUserProfileData(user.id);
+        // Удаляем также цели и активности
+        await SupabaseService.clearUserGoalsAndActivities(user.id);
+      }
+
+      // Очищаем shared_preferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // Перенаправляем на экран авторизации
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const SplashScreen()),
+            (Route<dynamic> route) => false,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Данные успешно удалены'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      print('Error deleting user  $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ошибка при удалении данных'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _signOut() async {
+    try {
+      await SupabaseHelper.client.auth.signOut();
+
+      // Очищаем локальные данные
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      // Перенаправляем на экран авторизации
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const SplashScreen()),
+            (Route<dynamic> route) => false,
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error signing out: $e');
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ошибка при выходе'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
