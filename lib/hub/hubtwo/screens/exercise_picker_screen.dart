@@ -1,8 +1,9 @@
 // lib/hub/hubtwo/screens/exercise_picker_screen.dart
-import 'package:flutter/material.dart';
+import 'package:Elite_KA/hub/hubThree/data/initial_exercises.dart' as initialData;
+import 'package:Elite_KA/hub/hubthree/services/exercise_service.dart';
 import 'package:Elite_KA/hub/hubtwo/models/exercise.dart';
+import 'package:flutter/material.dart';
 import 'package:Elite_KA/hub/hubtwo/models/workout.dart';
-import 'package:Elite_KA/hub/hubtwo/services/exercise_service.dart';
 
 class ExercisePickerScreen extends StatefulWidget {
   final List<WorkoutExercise> selectedExercises;
@@ -28,7 +29,7 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
   }
 
   Future<void> _loadExercises() async {
-    final exercises = await ExerciseService.getAllExercises();
+    final exercises = await ExerciseService.getAllExercises(initialData.getBaseExercises());
     final selectedIds = {
       for (var ex in widget.selectedExercises) ex.id,
     };

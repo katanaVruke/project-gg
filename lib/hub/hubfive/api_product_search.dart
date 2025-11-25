@@ -1,9 +1,12 @@
 // lib/hub/hubfive/api_product_search.dart
 import 'dart:convert';
+import 'package:Elite_KA/Hub/HubFive/ingredients.dart';
+import 'package:Elite_KA/supabase/supabase_helper.dart';
+import 'package:Elite_KA/supabase/supabase_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'ingredients.dart';
 
 class ApiProductSearchPage extends StatefulWidget {
   final VoidCallback onIngredientAdded;
@@ -51,7 +54,7 @@ class _ApiProductSearchPageState extends State<ApiProductSearchPage> {
         _searchResults = results;
       });
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.grey[900]!,
@@ -208,6 +211,16 @@ class _ApiProductSearchPageState extends State<ApiProductSearchPage> {
 
                             existingList.add(item.toJson());
                             await prefs.setString('ingredients', jsonEncode(existingList));
+                            final user = SupabaseHelper.client.auth.currentUser;
+                            if (user != null) {
+                              try {
+                                await SupabaseService.addIngredient(user.id, item.toJson());
+                              } catch (e) {
+                                if (kDebugMode) {
+                                  print('Ошибка добавления ингредиента в Supabase: $e');
+                                }
+                              }
+                            }
 
                             widget.onIngredientAdded();
 
@@ -217,7 +230,7 @@ class _ApiProductSearchPageState extends State<ApiProductSearchPage> {
                                   backgroundColor: Colors.grey[900]!,
                                   content: Center(
                                     child: Text(
-                                      '"${item.name}"добавлен',
+                                      '"${item.name}" добавлен',
                                       style: TextStyle(
                                         color: Colors.red,
                                         fontSize: 14.0,

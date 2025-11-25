@@ -1,6 +1,7 @@
+//lib/hub/hubthree/widgets/searchbottomsheet.dart
+import 'package:Elite_KA/Hub/HubThree/pages/ExerciseDetailPage.dart';
+import 'package:Elite_KA/hub/hubtwo/models/exercise.dart';
 import 'package:flutter/material.dart';
-import '../../../hub/hubtwo/models/exercise.dart';
-import '../pages/ExerciseDetailPage.dart';
 
 class SearchBottomSheet extends StatefulWidget {
   final List<Exercise> exercises;

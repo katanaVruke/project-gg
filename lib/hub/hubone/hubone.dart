@@ -186,7 +186,7 @@ class _HubOneState extends State<HubOne> {
                       icon: Icons.telegram,
                       title: '@exp206',
                       onTap: () {
-                        _launchTelegram('https://t.me/exp206');
+                        _launchTelegram('https://t.me/exp206  ');
                       },
                       isSmallScreen: isSmallScreen,
                     ),
@@ -489,10 +489,16 @@ class _HubOneState extends State<HubOne> {
       if (user != null) {
         await SupabaseService.clearUserProfileData(user.id);
         await SupabaseService.clearUserGoalsAndActivities(user.id);
+        await SupabaseService.clearUserIngredients(user.id);
+        await SupabaseService.clearUserDishes(user.id);
+        await SupabaseService.clearEatenDishesForUser(user.id);
       }
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
+
+      await SupabaseHelper.client.auth.signOut();
+
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const SplashScreen()),

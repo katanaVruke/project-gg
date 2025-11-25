@@ -241,6 +241,11 @@ class _Step6State extends State<Step6> {
               if (user != null) {
                 await SupabaseService.updateUserProfile(
                   user.id,
+                  selectedGender: prefs.getString('selectedGender') ?? '',
+                  selectedAge: prefs.getInt('selectedAge'),
+                  selectedHeight: prefs.getDouble('selectedHeight'),
+                  selectedWeight: prefs.getDouble('selectedWeight'),
+                  selectedFatPercentage: prefs.getString('selectedFatPercentage') ?? '',
                   selectedEquipment: selectedEquipment.toList(),
                 );
               }

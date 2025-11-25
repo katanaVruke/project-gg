@@ -1,8 +1,11 @@
-// lib/hub/HubThree/widgets/NewExercisePage.dart
+// lib/hub/hubthree/widgets/newexercisepage.dart
 import 'dart:io';
+import 'package:Elite_KA/hub/hubthree/services/exercise_service.dart';
+import 'package:Elite_KA/hub/hubtwo/models/exercise.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../hub/hubtwo/models/exercise.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 
 class NewExercisePage extends StatefulWidget {
   const NewExercisePage({super.key});
@@ -63,13 +66,57 @@ class _NewExercisePageState extends State<NewExercisePage> {
     'Медбол',
   ];
 
+  Future<String?> _copyImageToAppDir(String originalPath) async {
+    try {
+      final originalFile = File(originalPath);
+      if (!await originalFile.exists()) {
+        throw Exception('Исходный файл не существует');
+      }
+      final appDir = await getApplicationDocumentsDirectory();
+      final fileName = path.basename(originalPath);
+      final newFilePath = path.join(appDir.path, 'exercise_images', fileName);
+      final newFile = File(newFilePath);
+      final imageDir = Directory(path.join(appDir.path, 'exercise_images'));
+      if (!await imageDir.exists()) {
+        await imageDir.create(recursive: true);
+      }
+      final copiedFile = await originalFile.copy(newFile.path);
+      return copiedFile.path;
+    } catch (e) {
+      debugPrint('Ошибка при копировании изображения: $e');
+      return null;
+    }
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
-      setState(() {
-        _imagePath = picked.path;
-      });
+      final copiedPath = await _copyImageToAppDir(picked.path);
+      if (copiedPath != null) {
+        setState(() {
+          _imagePath = copiedPath;
+        });
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.grey[900],
+              content: Center(
+                child: Text(
+                  'Ошибка при сохранении изображения',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -166,9 +213,8 @@ class _NewExercisePageState extends State<NewExercisePage> {
                         borderSide: BorderSide(color: Colors.grey),
                       ),
                     ),
-                    validator: (value) => value?.isEmpty ?? true
-                        ? 'Введите название'
-                        : null,
+                    validator: (value) =>
+                    (value?.isEmpty ?? true) ? 'Введите название' : null,
                     onSaved: (value) => _name = value!,
                   ),
                   SizedBox(height: verticalSpacing),
@@ -184,7 +230,9 @@ class _NewExercisePageState extends State<NewExercisePage> {
                     initialValue: _bodyPart,
                     items: _bodyParts.map((e) => DropdownMenuItem(
                       value: e,
-                      child: Text(e, style: TextStyle(color: Colors.white, fontSize: fontSize)),
+                      child: Text(e,
+                          style: TextStyle(
+                              color: Colors.white, fontSize: fontSize)),
                     )).toList(),
                     onChanged: (value) => setState(() => _bodyPart = value!),
                     decoration: InputDecoration(
@@ -213,7 +261,8 @@ class _NewExercisePageState extends State<NewExercisePage> {
                         width: MediaQuery.of(context).size.width - 48,
                         child: Text(
                           e,
-                          style: TextStyle(color: Colors.white, fontSize: fontSize),
+                          style: TextStyle(
+                              color: Colors.white, fontSize: fontSize),
                           overflow: TextOverflow.ellipsis,
                           maxLines: 1,
                         ),
@@ -235,16 +284,14 @@ class _NewExercisePageState extends State<NewExercisePage> {
                     children: [
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
+                          onPressed: () async {
                             if (_formKey.currentState!.validate()) {
                               _formKey.currentState!.save();
-
                               final muscleGroups = _bodyPart == 'Всё тело'
                                   ? ['Всё тело']
                                   : [_bodyPart];
-
                               final newExercise = Exercise(
-                                id: 'custom_${DateTime.now().millisecondsSinceEpoch}',
+                                id: DateTime.now().millisecondsSinceEpoch.toString(),
                                 name: _name,
                                 muscleGroups: muscleGroups,
                                 equipment: _equipment,
@@ -252,7 +299,8 @@ class _NewExercisePageState extends State<NewExercisePage> {
                                 bodyPart: _bodyPart,
                                 isCustom: true,
                               );
-
+                              await ExerciseService.addCustomExercise(newExercise);
+                              await Future.delayed(const Duration(milliseconds: 100));
                               Navigator.pop(context, newExercise);
                             }
                           },

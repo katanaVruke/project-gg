@@ -1,10 +1,12 @@
 // lib/hub/hubFive/recepts.dart
 import 'dart:convert';
+import 'package:Elite_KA/Hub/HubFive/ingredients.dart';
+import 'package:Elite_KA/supabase/supabase_helper.dart';
+import 'package:Elite_KA/supabase/supabase_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'ingredients.dart';
 
 class ReceptsPage extends StatefulWidget {
   const ReceptsPage({super.key});
@@ -27,7 +29,6 @@ class _ReceptsPageState extends State<ReceptsPage> {
 
   Future<void> _loadDishesAndIngredients() async {
     final prefs = await SharedPreferences.getInstance();
-
     final ingredientsJson = prefs.getString('ingredients') ?? '[]';
     try {
       final List? ingList = jsonDecode(ingredientsJson) as List?;
@@ -40,13 +41,32 @@ class _ReceptsPageState extends State<ReceptsPage> {
       }
       _allIngredients = [];
     }
-
     final dishesJson = prefs.getString('dishes') ?? '[]';
     try {
       final List? dishList = jsonDecode(dishesJson) as List?;
       final List<Dish> dishes = (dishList ?? [])
           .map((e) => Dish.fromJson(e as Map<String, dynamic>))
           .toList();
+      if (dishes.isEmpty) {
+        final user = SupabaseHelper.client.auth.currentUser;
+        if (user != null) {
+          try {
+            final supabaseDishes = await SupabaseService.getUserDishes(user.id);
+            if (supabaseDishes != null && supabaseDishes.isNotEmpty) {
+              await prefs.setString('dishes', jsonEncode(supabaseDishes));
+              final loadedDishes = supabaseDishes.map((json) => Dish.fromJson(json)).toList();
+              setState(() {
+                _dishes = loadedDishes;
+              });
+              return;
+            }
+          } catch (e) {
+            if (kDebugMode) {
+              print('Ошибка загрузки блюд из Supabase: $e');
+            }
+          }
+        }
+      }
 
       setState(() {
         _dishes = dishes;
@@ -65,7 +85,66 @@ class _ReceptsPageState extends State<ReceptsPage> {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = jsonEncode(dishes.map((d) => d.toJson()).toList());
     await prefs.setString('dishes', jsonString);
+    final user = SupabaseHelper.client.auth.currentUser;
+    if (user != null) {
+      try {
+        final dishesData = dishes.map((dish) => dish.toJson()).toList();
+        await SupabaseService.syncDishesToSupabase(user.id, dishesData);
+      } catch (e) {
+        if (kDebugMode) {
+          print('Ошибка синхронизации блюд в Supabase: $e');
+        }
+      }
+    }
+
     await _loadDishesAndIngredients();
+  }
+
+  Future<void> _deleteDish(Dish dish) async {
+    final prefs = await SharedPreferences.getInstance();
+    final dishesJson = prefs.getString('dishes') ?? '[]';
+    final List<dynamic> existing = jsonDecode(dishesJson);
+    existing.removeWhere((d) => d['name'] == dish.name);
+    await prefs.setString('dishes', jsonEncode(existing));
+    final user = SupabaseHelper.client.auth.currentUser;
+    if (user != null) {
+      try {
+        await SupabaseService.deleteDish(user.id, dish.name);
+      } catch (e) {
+        if (kDebugMode) {
+          print('Ошибка удаления блюда из Supabase: $e');
+        }
+      }
+    }
+    setState(() {
+      _dishes.removeWhere((d) => d.name == dish.name);
+    });
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.grey[900]!,
+              content: Center(
+                child: Text(
+                  'Блюдо удалено',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 14.0,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      });
+    }
   }
 
   void _showDishDetails(Dish dish) {
@@ -148,8 +227,6 @@ class _ReceptsPageState extends State<ReceptsPage> {
 
   Future<void> _showEditDishDialog(Dish oldDish) async {
     final nameController = TextEditingController(text: oldDish.name);
-
-    // Конвертируем существующие DishIngredientRef в DishIngredientEntry для удобства UI
     List<DishIngredientEntry> currentEntries = oldDish.ingredientRefs.map((ref) {
       final ing = _allIngredients.firstWhere(
             (i) => i.name == ref.ingredientName,
@@ -296,32 +373,10 @@ class _ReceptsPageState extends State<ReceptsPage> {
               ),
               TextButton(
                 onPressed: () async {
-                  final prefs = await SharedPreferences.getInstance();
-                  final dishesJson = prefs.getString('dishes') ?? '[]';
-                  final List<dynamic> existing = jsonDecode(dishesJson);
-                  existing.removeWhere((d) => d['name'] == oldDish.name);
-                  await prefs.setString('dishes', jsonEncode(existing));
-                  Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.grey[900]!,
-                      content: Center(
-                        child: Text(
-                          'Блюдо удалено',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 14.0,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
+                  await _deleteDish(oldDish);
+                  if (context.mounted) {
+                    Navigator.of(ctx).pop();
+                  }
                 },
                 child: Text(
                   'Удалить',
@@ -342,15 +397,34 @@ class _ReceptsPageState extends State<ReceptsPage> {
                 ),
                 onPressed: () async {
                   if (nameController.text.trim().isEmpty || currentEntries.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Укажите название и хотя бы 1 ингредиент'),
-                      ),
-                    );
+                    if (mounted) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.grey[900]!,
+                              content: Center(
+                                child: Text(
+                                  'Укажите название и хотя бы 1 ингредиент',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 14.0,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      });
+                    }
                     return;
                   }
-
-                  // Конвертируем обратно в DishIngredientRef
                   final updatedRefs = currentEntries.map((entry) {
                     return DishIngredientRef(
                       ingredientName: entry.ingredient.name,
@@ -368,27 +442,35 @@ class _ReceptsPageState extends State<ReceptsPage> {
                   dishes.add(updatedDish);
 
                   await _saveDishes(dishes);
-                  Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.grey[900]!,
-                      content: Center(
-                        child: Text(
-                          'Блюдо обновлено',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 14.0,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
+                  if (context.mounted) {
+                    Navigator.of(ctx).pop();
+                    if (mounted) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.grey[900]!,
+                              content: Center(
+                                child: Text(
+                                  'Блюдо обновлено',
+                                  style: TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 14.0,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      });
+                    }
+                  }
                 },
                 child: Text(
                   'Сохранить',
@@ -820,7 +902,7 @@ class Dish {
   };
 
   factory Dish.fromJson(Map<String, dynamic> json) => Dish(
-    name: json['name'] ?? '',
+    name: json['name'] as String? ?? '',
     ingredientRefs: (json['ingredients'] as List?)
         ?.map((e) => DishIngredientRef.fromJson(e as Map<String, dynamic>))
         .toList() ??
@@ -840,7 +922,7 @@ class DishIngredientRef {
   };
 
   factory DishIngredientRef.fromJson(Map<String, dynamic> json) => DishIngredientRef(
-    ingredientName: json['ingredient_name'] ?? '',
+    ingredientName: json['ingredient_name'] as String? ?? '',
     weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
   );
 }

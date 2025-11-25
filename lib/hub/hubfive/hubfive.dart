@@ -1,8 +1,8 @@
 // lib/hub/hubFive/hubFive.dart
 import 'dart:convert';
+import 'package:Elite_KA/Hub/HubFive/food.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'food.dart';
 
 class HubFive extends StatefulWidget {
   const HubFive({super.key});
@@ -58,8 +58,8 @@ class _HubFiveState extends State<HubFive> {
         selectedWeight != null &&
         selectedHeight != null &&
         selectedFatPercentage != null &&
-        selectedTarget != null && // Проверяем, что поле заполнено
-        selectedActivityLevel != null) { // Проверяем, что поле заполнено
+        selectedTarget != null &&
+        selectedActivityLevel != null) {
       calculateKbju();
     }
   }
@@ -199,8 +199,8 @@ class _HubFiveState extends State<HubFive> {
         selectedWeight == null ||
         selectedHeight == null ||
         selectedFatPercentage == null ||
-        selectedTarget == null || // Проверяем, что поле заполнено
-        selectedActivityLevel == null) { // Проверяем, что поле заполнено
+        selectedTarget == null ||
+        selectedActivityLevel == null) {
       return;
     }
 
@@ -280,7 +280,6 @@ class _HubFiveState extends State<HubFive> {
     final paddingValue = isSmallScreen ? 16.0 : 20.0;
     final buttonFontSize = isSmallScreen ? 16.0 : 18.0;
 
-    // Проверяем, заполнены ли необходимые поля
     bool hasMissingData = selectedTarget == null || selectedTarget!.isEmpty ||
         selectedActivityLevel == null || selectedActivityLevel!.isEmpty;
 
@@ -333,7 +332,7 @@ class _HubFiveState extends State<HubFive> {
                       ),
                       SizedBox(height: isSmallScreen ? 8 : 12),
                       if (hasMissingData) ...[
-                        Center( // Оборачиваем текст в Center для центрирования
+                        Center(
                           child: Text(
                             'Вы не заполнили данные в профиле',
                             style: TextStyle(

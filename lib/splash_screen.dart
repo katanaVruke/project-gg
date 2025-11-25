@@ -119,11 +119,22 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         final hasFatPercentage = userProfile['selected_fat_percentage'] != null &&
             userProfile['selected_fat_percentage'] != '' &&
             userProfile['selected_fat_percentage'] != 'EMPTY';
-        final hasEquipment = userProfile['selected_equipment'] != null &&
-            userProfile['selected_equipment'].length > 0;
-        return hasGender && hasAge && hasHeight && hasWeight && hasFatPercentage && hasEquipment;
+
+        final isComplete = hasGender && hasAge && hasHeight && hasWeight && hasFatPercentage;
+
+        if (kDebugMode) {
+          print('_isRegistrationComplete: $isComplete');
+          print('  hasGender: $hasGender (${userProfile['selected_gender']})');
+          print('  hasAge: $hasAge (${userProfile['selected_age']})');
+          print('  hasHeight: $hasHeight (${userProfile['selected_height']})');
+          print('  hasWeight: $hasWeight (${userProfile['selected_weight']})');
+          print('  hasFatPercentage: $hasFatPercentage (${userProfile['selected_fat_percentage']})');
+        }
+
+        return isComplete;
       }
       return false;
+
     } catch (e) {
       if (kDebugMode) {
         print('Ошибка при проверке статуса регистрации: $e');

@@ -1,5 +1,5 @@
-// lib/hub/HubThree/data/initial_exercises.dart
-import '../../../hub/hubtwo/models/exercise.dart';
+// lib/hub/hubthree/data/initial_exercises.dart
+import 'package:Elite_KA/hub/hubtwo/models/exercise.dart';
 
 List<Exercise> getBaseExercises() {
   return [

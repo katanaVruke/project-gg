@@ -1,5 +1,8 @@
+// lib/hub/hubthree/pages/exercisedetailpage.dart
+import 'dart:io';
+import 'package:Elite_KA/hub/hubtwo/models/exercise.dart';
 import 'package:flutter/material.dart';
-import '../../../hub/hubtwo/models/exercise.dart';
+
 
 class ExerciseDetailPage extends StatelessWidget {
   final Exercise exercise;
@@ -37,17 +40,22 @@ class ExerciseDetailPage extends StatelessWidget {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(borderRadius),
-                child: Image.network(
-                  exercise.image,
-                  height: isSmallScreen ? 160 : 200,
+                child: exercise.image.isNotEmpty && File(exercise.image).existsSync()
+                    ? Image.file(
+                  File(exercise.image),
                   width: double.infinity,
+                  height: isSmallScreen ? 200.0 : 250.0,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    height: isSmallScreen ? 160 : 200,
+                )
+                    : Container(
+                  width: double.infinity,
+                  height: isSmallScreen ? 200.0 : 250.0,
+                  decoration: BoxDecoration(
                     color: Colors.grey[800],
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.image, size: 56, color: Colors.grey),
+                    borderRadius: BorderRadius.circular(borderRadius),
                   ),
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.image, size: 56, color: Colors.grey),
                 ),
               ),
               SizedBox(height: verticalSpacing),

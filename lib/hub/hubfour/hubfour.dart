@@ -1,10 +1,11 @@
-import 'dart:convert';
+// lib/hub/hubfour/hubfour.dart
+import 'package:Elite_KA/hub/hubtwo/models/completed_workout.dart';
+import 'package:Elite_KA/hub/hubtwo/services/completed_workout_storage_service.dart';
 import 'package:Elite_KA/hub/hubfour/workout_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:Elite_KA/hub/hubtwo/models/completed_workout.dart';
-import 'package:Elite_KA/hub/hubtwo/services/completed_workout_storage_service.dart';
+import 'dart:convert';
 
 class HubFour extends StatefulWidget {
   const HubFour({super.key});
@@ -15,10 +16,17 @@ class HubFour extends StatefulWidget {
 
 class _HubFourState extends State<HubFour> {
   List<String> _dayLabels = [];
-  List<double> _kcalData = [], _proteinData = [], _fatData = [], _carbsData = [];
-  int _maxIndex = -1, _minIndex = -1;
+  List<double> _kcalData = [],
+      _proteinData = [],
+      _fatData = [],
+      _carbsData = [];
+  int _maxIndex = -1,
+      _minIndex = -1;
   String _selectedMetric = 'kcal';
-  double _normKcal = 0, _normProtein = 0, _normFat = 0, _normCarbs = 0;
+  double _normKcal = 0,
+      _normProtein = 0,
+      _normFat = 0,
+      _normCarbs = 0;
   String _weekRange = '';
   int _weekOffset = 0;
   List<CompletedWorkout> _workoutHistory = [];
@@ -39,20 +47,27 @@ class _HubFourState extends State<HubFour> {
   }
 
   String _formatDateKey(DateTime date) =>
-      "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+      "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day
+          .toString().padLeft(2, '0')}";
 
   Future<void> _loadWeekData() async {
     final prefs = await SharedPreferences.getInstance();
     final start = _getStartOfWeek(offset: _weekOffset);
     List<String> labels = [];
-    List<double> kcal = [], protein = [], fat = [], carbs = [];
+    List<double> kcal = [],
+        protein = [],
+        fat = [],
+        carbs = [];
 
     for (int i = 0; i < 7; i++) {
       final date = start.add(Duration(days: i));
       final key = 'eaten_foods_${_formatDateKey(date)}';
       final jsonString = prefs.getString(key) ?? '[]';
 
-      double dayKcal = 0, dayProtein = 0, dayFat = 0, dayCarbs = 0;
+      double dayKcal = 0,
+          dayProtein = 0,
+          dayFat = 0,
+          dayCarbs = 0;
       try {
         final list = jsonDecode(jsonString) as List;
         for (final item in list) {
@@ -73,7 +88,9 @@ class _HubFourState extends State<HubFour> {
 
     _updateExtremes(_selectedMetric);
     final end = start.add(const Duration(days: 6));
-    String format(DateTime d) => '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}';
+    String format(DateTime d) =>
+        '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(
+            2, '0')}';
 
     setState(() {
       _dayLabels = labels;
@@ -86,13 +103,15 @@ class _HubFourState extends State<HubFour> {
   }
 
   Future<void> _loadWorkoutHistory() async {
-    final workouts = await CompletedWorkoutStorageService.loadCompletedWorkouts();
+    final workouts = await CompletedWorkoutStorageService
+        .loadCompletedWorkouts();
 
     final start = _getStartOfWeek(offset: _weekOffset);
     final end = start.add(const Duration(days: 6));
 
     final filtered = workouts.where((w) {
-      final date = DateTime(w.startTime.year, w.startTime.month, w.startTime.day);
+      final date = DateTime(
+          w.startTime.year, w.startTime.month, w.startTime.day);
       final weekStart = DateTime(start.year, start.month, start.day);
       final weekEnd = DateTime(end.year, end.month, end.day);
       return !date.isBefore(weekStart) && !date.isAfter(weekEnd);
@@ -152,7 +171,8 @@ class _HubFourState extends State<HubFour> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final List<String> rawList = prefs.getStringList('completed_workouts') ?? [];
+      final List<String> rawList = prefs.getStringList('completed_workouts') ??
+          [];
 
       final updatedList = rawList
           .map((str) => jsonDecode(str) as Map<String, dynamic>)
@@ -189,7 +209,8 @@ class _HubFourState extends State<HubFour> {
             style: TextStyle(color: Colors.white),
           ),
           content: Text(
-            '«${workout.workoutName}» от ${workout.formattedDate} будет удалена навсегда.',
+            '«${workout.workoutName}» от ${workout
+                .formattedDate} будет удалена навсегда.',
             style: const TextStyle(color: Colors.grey),
           ),
           actions: [
@@ -200,13 +221,15 @@ class _HubFourState extends State<HubFour> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
                 _deleteWorkout(workout);
               },
-              child: const Text('Удалить', style: TextStyle(color: Colors.white)),
+              child: const Text(
+                  'Удалить', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -225,7 +248,10 @@ class _HubFourState extends State<HubFour> {
 
   @override
   Widget build(BuildContext context) {
-    final isSmallScreen = MediaQuery.of(context).size.height < 700;
+    final isSmallScreen = MediaQuery
+        .of(context)
+        .size
+        .height < 700;
     final padding = isSmallScreen ? 12.0 : 16.0;
     final verticalSpacing = isSmallScreen ? 8.0 : 12.0;
     final titleFontSize = isSmallScreen ? 16.0 : 18.0;
@@ -296,7 +322,8 @@ class _HubFourState extends State<HubFour> {
                 SizedBox(height: verticalSpacing / 2),
 
                 _buildWorkoutSummaryCard(isSmallScreen, padding),
-                if (_workoutHistory.isNotEmpty) SizedBox(height: verticalSpacing),
+                if (_workoutHistory.isNotEmpty) SizedBox(
+                    height: verticalSpacing),
                 _buildWorkoutHistorySection(isSmallScreen, padding),
                 SizedBox(height: verticalSpacing),
               ],
@@ -307,66 +334,70 @@ class _HubFourState extends State<HubFour> {
     );
   }
 
-  Widget _buildWeekNavigator(bool isSmallScreen, double padding) => Container(
-    padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
-    decoration: BoxDecoration(
-      color: Colors.grey[900],
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        IconButton(
-          onPressed: _weekOffset > -3 ? () => _changeWeek(-1) : null,
-          icon: Icon(Icons.arrow_back,
-              color: _weekOffset > -3 ? Colors.white : Colors.grey,
-              size: isSmallScreen ? 18 : 20),
+  Widget _buildWeekNavigator(bool isSmallScreen, double padding) =>
+      Container(
+        padding: EdgeInsets.all(isSmallScreen ? 10 : 12),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(12),
         ),
-        Text(
-          _weekRange,
-          style: TextStyle(
-              color: Colors.white,
-              fontSize: isSmallScreen ? 12 : 14,
-              fontWeight: FontWeight.bold),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              onPressed: _weekOffset > -3 ? () => _changeWeek(-1) : null,
+              icon: Icon(Icons.arrow_back,
+                  color: _weekOffset > -3 ? Colors.white : Colors.grey,
+                  size: isSmallScreen ? 18 : 20),
+            ),
+            Text(
+              _weekRange,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isSmallScreen ? 12 : 14,
+                  fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              onPressed: _weekOffset < 0 ? () => _changeWeek(1) : null,
+              icon: Icon(Icons.arrow_forward,
+                  color: _weekOffset < 0 ? Colors.white : Colors.grey,
+                  size: isSmallScreen ? 18 : 20),
+            ),
+          ],
         ),
-        IconButton(
-          onPressed: _weekOffset < 0 ? () => _changeWeek(1) : null,
-          icon: Icon(Icons.arrow_forward,
-              color: _weekOffset < 0 ? Colors.white : Colors.grey,
-              size: isSmallScreen ? 18 : 20),
-        ),
-      ],
-    ),
-  );
+      );
 
-  Widget _buildChartContainer(bool isSmallScreen, double padding, double chartHeight) => Container(
-    padding: EdgeInsets.all(padding),
-    decoration: BoxDecoration(
-      color: Colors.grey[900],
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          _getMetricLabel(_selectedMetric),
-          style: TextStyle(
-              color: Colors.white,
-              fontSize: isSmallScreen ? 14 : 16,
-              fontWeight: FontWeight.bold),
+  Widget _buildChartContainer(bool isSmallScreen, double padding,
+      double chartHeight) =>
+      Container(
+        padding: EdgeInsets.all(padding),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(12),
         ),
-        SizedBox(height: isSmallScreen ? 6 : 8),
-        SizedBox(height: chartHeight, child: _buildChart(isSmallScreen)),
-      ],
-    ),
-  );
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _getMetricLabel(_selectedMetric),
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: isSmallScreen ? 14 : 16,
+                  fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: isSmallScreen ? 6 : 8),
+            SizedBox(height: chartHeight, child: _buildChart(isSmallScreen)),
+          ],
+        ),
+      );
 
-  String _getMetricLabel(String metric) => {
-    'kcal': 'Калории',
-    'protein': 'Белки',
-    'fat': 'Жиры',
-    'carbs': 'Углеводы'
-  }[metric] ?? '';
+  String _getMetricLabel(String metric) =>
+      {
+        'kcal': 'Калории',
+        'protein': 'Белки',
+        'fat': 'Жиры',
+        'carbs': 'Углеводы'
+      }[metric] ?? '';
 
   Widget _buildChart(bool isSmallScreen) {
     if (_kcalData.isEmpty) {
@@ -410,20 +441,28 @@ class _HubFourState extends State<HubFour> {
                   axisSide: meta.axisSide,
                   child: Text(
                     _dayLabels[i],
-                    style: TextStyle(fontSize: isSmallScreen ? 9 : 10, color: Colors.grey),
+                    style: TextStyle(
+                        fontSize: isSmallScreen ? 9 : 10, color: Colors.grey),
                   ),
                 );
               },
             ),
           ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false)),
         ),
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
-            spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value)).toList(),
+            spots: data
+                .asMap()
+                .entries
+                .map((e) => FlSpot(e.key.toDouble(), e.value))
+                .toList(),
             isCurved: false,
             color: color,
             barWidth: 2,
@@ -477,72 +516,79 @@ class _HubFourState extends State<HubFour> {
   double _computeMaxY(List<double> data) =>
       data.isEmpty ? 100 : data.reduce((a, b) => a > b ? a : b) * 1.2;
 
-  Widget _buildLegendAndSummary(bool isSmallScreen, double padding) => Container(
-    padding: EdgeInsets.all(padding),
-    decoration: BoxDecoration(
-      color: Colors.grey[900],
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: isSmallScreen ? 12 : 16,
-          runSpacing: isSmallScreen ? 4 : 6,
+  Widget _buildLegendAndSummary(bool isSmallScreen, double padding) =>
+      Container(
+        padding: EdgeInsets.all(padding),
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _legendItem('Ккал', Colors.red, 'kcal', isSmallScreen),
-            _legendItem('Б', Colors.green, 'protein', isSmallScreen),
-            _legendItem('Ж', Colors.blue, 'fat', isSmallScreen),
-            _legendItem('У', Colors.orange, 'carbs', isSmallScreen),
+            Wrap(
+              spacing: isSmallScreen ? 12 : 16,
+              runSpacing: isSmallScreen ? 4 : 6,
+              children: [
+                _legendItem('Ккал', Colors.red, 'kcal', isSmallScreen),
+                _legendItem('Б', Colors.green, 'protein', isSmallScreen),
+                _legendItem('Ж', Colors.blue, 'fat', isSmallScreen),
+                _legendItem('У', Colors.orange, 'carbs', isSmallScreen),
+              ],
+            ),
+            Divider(height: isSmallScreen ? 12 : 16, color: Colors.grey[700]),
+            if (_maxIndex >= 0 && _minIndex >= 0)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _extremeText(
+                      'Максимум', _getValueAt(_maxIndex), _dayLabels[_maxIndex],
+                      _getColorForMetric(), isSmallScreen),
+                  _extremeText(
+                      'Минимум',
+                      _getValueAt(_minIndex),
+                      _dayLabels[_minIndex],
+                      _getColorForMetric(),
+                      isSmallScreen),
+                ],
+              ),
           ],
         ),
-        Divider(height: isSmallScreen ? 12 : 16, color: Colors.grey[700]),
-        if (_maxIndex >= 0 && _minIndex >= 0)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _extremeText(
-                  'Максимум', _getValueAt(_maxIndex), _dayLabels[_maxIndex], _getColorForMetric(), isSmallScreen),
-              _extremeText(
-                  'Минимум',
-                  _getValueAt(_minIndex),
-                  _dayLabels[_minIndex],
-                  _getColorForMetric(),
-                  isSmallScreen),
-            ],
-          ),
-      ],
-    ),
-  );
+      );
 
-  Widget _legendItem(String text, Color color, String metric, bool isSmallScreen) => GestureDetector(
-    onTap: () {
-      setState(() => _selectedMetric = metric);
-      _updateExtremes(metric);
-    },
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: isSmallScreen ? 8 : 10,
-          height: isSmallScreen ? 8 : 10,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 1),
-          ),
+  Widget _legendItem(String text, Color color, String metric,
+      bool isSmallScreen) =>
+      GestureDetector(
+        onTap: () {
+          setState(() => _selectedMetric = metric);
+          _updateExtremes(metric);
+        },
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: isSmallScreen ? 8 : 10,
+              height: isSmallScreen ? 8 : 10,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 1),
+              ),
+            ),
+            SizedBox(width: isSmallScreen ? 2 : 4),
+            Text(text, style: TextStyle(
+                color: Colors.white, fontSize: isSmallScreen ? 11 : 12)),
+          ],
         ),
-        SizedBox(width: isSmallScreen ? 2 : 4),
-        Text(text, style: TextStyle(color: Colors.white, fontSize: isSmallScreen ? 11 : 12)),
-      ],
-    ),
-  );
+      );
 
-  Widget _extremeText(String prefix, double value, String day, Color color, bool isSmallScreen) {
+  Widget _extremeText(String prefix, double value, String day, Color color,
+      bool isSmallScreen) {
     String unit = _selectedMetric == 'kcal' ? 'ккал' : 'г';
     return Row(
       children: [
-        Icon(Icons.fiber_manual_record, size: isSmallScreen ? 6 : 8, color: color),
+        Icon(Icons.fiber_manual_record, size: isSmallScreen ? 6 : 8,
+            color: color),
         SizedBox(width: isSmallScreen ? 2 : 4),
         Text('$prefix: ${value.toStringAsFixed(1)} $unit — $day',
             style: TextStyle(color: color, fontSize: isSmallScreen ? 12 : 13)),
@@ -550,21 +596,23 @@ class _HubFourState extends State<HubFour> {
     );
   }
 
-  double _getValueAt(int index) => {
-    'kcal': _kcalData[index],
-    'protein': _proteinData[index],
-    'fat': _fatData[index],
-    'carbs': _carbsData[index],
-  }[_selectedMetric] ??
-      0;
+  double _getValueAt(int index) =>
+      {
+        'kcal': _kcalData[index],
+        'protein': _proteinData[index],
+        'fat': _fatData[index],
+        'carbs': _carbsData[index],
+      }[_selectedMetric] ??
+          0;
 
-  Color _getColorForMetric() => {
-    'kcal': Colors.red,
-    'protein': Colors.green,
-    'fat': Colors.blue,
-    'carbs': Colors.orange,
-  }[_selectedMetric] ??
-      Colors.grey;
+  Color _getColorForMetric() =>
+      {
+        'kcal': Colors.red,
+        'protein': Colors.green,
+        'fat': Colors.blue,
+        'carbs': Colors.orange,
+      }[_selectedMetric] ??
+          Colors.grey;
 
   Widget _buildWorkoutSummaryCard(bool isSmallScreen, double padding) {
     final count = _workoutHistory.length;
@@ -665,7 +713,8 @@ class _HubFourState extends State<HubFour> {
         children: [
           Text(
             label,
-            style: TextStyle(color: Colors.grey, fontSize: isSmallScreen ? 11 : 12),
+            style: TextStyle(
+                color: Colors.grey, fontSize: isSmallScreen ? 11 : 12),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -717,7 +766,8 @@ class _HubFourState extends State<HubFour> {
             if (_workoutHistory.isNotEmpty)
               Text(
                 '${_workoutHistory.length} шт.',
-                style: TextStyle(color: Colors.grey, fontSize: isSmallScreen ? 11 : 13),
+                style: TextStyle(
+                    color: Colors.grey, fontSize: isSmallScreen ? 11 : 13),
               ),
           ],
         ),
@@ -732,17 +782,20 @@ class _HubFourState extends State<HubFour> {
             child: Center(
               child: Text(
                 'Тренировок за эту неделю нет',
-                style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                style: TextStyle(
+                    color: Colors.grey, fontStyle: FontStyle.italic),
               ),
             ),
           )
         else
-          ..._workoutHistory.map((workout) => _buildWorkoutCard(workout, isSmallScreen, padding)),
+          ..._workoutHistory.map((workout) =>
+              _buildWorkoutCard(workout, isSmallScreen, padding)),
       ],
     );
   }
 
-  Widget _buildWorkoutCard(CompletedWorkout workout, bool isSmallScreen, double padding) {
+  Widget _buildWorkoutCard(CompletedWorkout workout, bool isSmallScreen,
+      double padding) {
     final duration = workout.duration;
     final minutes = duration.inMinutes;
     final secs = duration.inSeconds.remainder(60);
@@ -777,7 +830,8 @@ class _HubFourState extends State<HubFour> {
                 ),
                 Text(
                   workout.formattedDate,
-                  style: TextStyle(color: Colors.grey, fontSize: isSmallScreen ? 11 : 13),
+                  style: TextStyle(
+                      color: Colors.grey, fontSize: isSmallScreen ? 11 : 13),
                 ),
               ],
             ),
@@ -789,7 +843,9 @@ class _HubFourState extends State<HubFour> {
                   children: [
                     _statBadge('⏱', durationText, Colors.blue, isSmallScreen),
                     SizedBox(width: isSmallScreen ? 6 : 10),
-                    _statBadge('⚖️', '${workout.totalVolume.toStringAsFixed(0)} кг', Colors.orange, isSmallScreen),
+                    _statBadge(
+                        '⚖️', '${workout.totalVolume.toStringAsFixed(0)} кг',
+                        Colors.orange, isSmallScreen),
                   ],
                 ),
                 IconButton(
@@ -809,13 +865,20 @@ class _HubFourState extends State<HubFour> {
     );
   }
 
+
   Widget _statBadge(String emoji, String text, Color color, bool isSmallScreen) {
+    final int r = color.r.toInt();
+    final int g = color.g.toInt();
+    final int b = color.b.toInt();
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 6 : 8, vertical: isSmallScreen ? 3 : 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: isSmallScreen ? 6 : 8,
+        vertical: isSmallScreen ? 3 : 4,
+      ),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: Color.fromRGBO(r, g, b, 0.15),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: Color.fromRGBO(r, g, b, 0.6), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -824,7 +887,11 @@ class _HubFourState extends State<HubFour> {
           SizedBox(width: isSmallScreen ? 2 : 4),
           Text(
             text,
-            style: TextStyle(color: color, fontSize: isSmallScreen ? 10 : 12, fontWeight: FontWeight.w500),
+            style: TextStyle(
+              color: color,
+              fontSize: isSmallScreen ? 10 : 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
       ),

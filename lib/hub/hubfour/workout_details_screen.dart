@@ -1,6 +1,6 @@
 // lib/hub/hubtwo/screens/workout_details_screen.dart
-import 'package:flutter/material.dart';
 import 'package:Elite_KA/hub/hubtwo/models/completed_workout.dart';
+import 'package:flutter/material.dart';
 
 class WorkoutDetailsScreen extends StatelessWidget {
   final CompletedWorkout workout;

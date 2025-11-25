@@ -1,10 +1,13 @@
 // lib/hub/hubFive/food.dart
 import 'dart:convert';
+import 'package:Elite_KA/Hub/HubFive/ingredients.dart';
 import 'package:Elite_KA/hub/hubfive/recepts.dart';
+import 'package:Elite_KA/supabase/supabase_helper.dart';
+import 'package:Elite_KA/supabase/supabase_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'ingredients.dart';
 
 class FoodPage extends StatefulWidget {
   const FoodPage({super.key});
@@ -22,7 +25,109 @@ class _FoodPageState extends State<FoodPage> {
   @override
   void initState() {
     super.initState();
+    _loadIngredientsFromSupabaseIfNeeded();
     _loadEatenFoodsForDate(_selectedDate);
+  }
+
+  Future<void> _loadIngredientsFromSupabaseIfNeeded() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ingredientsJson = prefs.getString('ingredients') ?? '[]';
+    final List<dynamic> list = jsonDecode(ingredientsJson);
+
+    if (list.isEmpty) {
+      final user = SupabaseHelper.client.auth.currentUser;
+      if (user != null) {
+        try {
+          final supabaseIngredients = await SupabaseService.getUserIngredients(user.id);
+          if (supabaseIngredients != null && supabaseIngredients.isNotEmpty) {
+            final ingredients = supabaseIngredients.map((json) => Ingredient.fromJson(json)).toList();
+            await prefs.setString('ingredients', jsonEncode(ingredients.map((i) => i.toJson()).toList()));
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('Ошибка загрузки ингредиентов из Supabase: $e');
+          }
+        }
+      }
+    }
+  }
+
+  Future<void> _loadDataFromSupabase() async {
+    final user = SupabaseHelper.client.auth.currentUser;
+    if (user != null) {
+      try {
+        final supabaseDishes = await SupabaseService.getUserDishes(user.id);
+        if (supabaseDishes != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('dishes', jsonEncode(supabaseDishes));
+        }
+        final formattedDate = _formatDate(_selectedDate);
+        final supabaseEatenFoods = await SupabaseService.getEatenDishesForDate(user.id, formattedDate);
+        if (supabaseEatenFoods != null) {
+          final eatenFoods = supabaseEatenFoods.map((json) => EatenDish.fromJson(json)).toList();
+          await _saveEatenFoodsForDate(_selectedDate, eatenFoods);
+          setState(() {
+            _currentDayEatenFoods = eatenFoods;
+          });
+        }
+
+        final supabaseIngredients = await SupabaseService.getUserIngredients(user.id);
+        if (supabaseIngredients != null) {
+          final ingredients = supabaseIngredients.map((json) => Ingredient.fromJson(json)).toList();
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('ingredients', jsonEncode(ingredients.map((i) => i.toJson()).toList()));
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.grey[900]!,
+              content: Center(
+                child: Text(
+                  'Данные синхронизированы',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 14.0,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Ошибка загрузки данных из Supabase: $e');
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.grey[900]!,
+              content: Center(
+                child: Text(
+                  'Ошибка синхронизации',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontSize: 14.0,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -36,7 +141,6 @@ class _FoodPageState extends State<FoodPage> {
     final verticalSpacing = isSmallScreen ? 12.0 : 20.0;
     final rowSpacing = isSmallScreen ? 6.0 : 8.0;
     final formattedDate = "${_selectedDate.day.toString().padLeft(2, '0')}.${_selectedDate.month.toString().padLeft(2, '0')}.${_selectedDate.year}";
-
     final totalKcal = _currentDayEatenFoods.fold(0.0, (sum, dish) => sum + dish.totalKcal);
     final totalProtein = _currentDayEatenFoods.fold(0.0, (sum, dish) => sum + dish.totalProtein);
     final totalFat = _currentDayEatenFoods.fold(0.0, (sum, dish) => sum + dish.totalFat);
@@ -60,6 +164,12 @@ class _FoodPageState extends State<FoodPage> {
         scrolledUnderElevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: Colors.white),
+            onPressed: _loadDataFromSupabase,
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -87,7 +197,6 @@ class _FoodPageState extends State<FoodPage> {
                 ),
               ),
               SizedBox(height: verticalSpacing),
-
               Expanded(
                 child: _currentDayEatenFoods.isEmpty
                     ? Center(
@@ -131,7 +240,6 @@ class _FoodPageState extends State<FoodPage> {
                 ),
               ),
               SizedBox(height: verticalSpacing),
-
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton(
@@ -148,7 +256,6 @@ class _FoodPageState extends State<FoodPage> {
                 ),
               ),
               SizedBox(height: verticalSpacing),
-
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -228,7 +335,6 @@ class _FoodPageState extends State<FoodPage> {
                 ),
               ),
               SizedBox(height: verticalSpacing),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -314,6 +420,26 @@ class _FoodPageState extends State<FoodPage> {
     final key = 'eaten_foods_${_formatDate(date)}';
     final jsonString = prefs.getString(key) ?? '[]';
     final List<dynamic> list = jsonDecode(jsonString);
+
+    if (list.isEmpty) {
+      final user = SupabaseHelper.client.auth.currentUser;
+      if (user != null) {
+        try {
+          final supabaseEatenFoods = await SupabaseService.getEatenDishesForDate(user.id, _formatDate(date));
+          if (supabaseEatenFoods != null && supabaseEatenFoods.isNotEmpty) {
+            await prefs.setString(key, jsonEncode(supabaseEatenFoods));
+            _currentDayEatenFoods = supabaseEatenFoods.map((json) => EatenDish.fromJson(json)).toList();
+            setState(() {});
+            return;
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            print('Ошибка загрузки съеденных блюд из Supabase: $e');
+          }
+        }
+      }
+    }
+
     _currentDayEatenFoods = list
         .map((e) => EatenDish.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -325,6 +451,20 @@ class _FoodPageState extends State<FoodPage> {
     final key = 'eaten_foods_${_formatDate(date)}';
     final jsonString = jsonEncode(foods.map((dish) => dish.toJson()).toList());
     await prefs.setString(key, jsonString);
+    final user = SupabaseHelper.client.auth.currentUser;
+    if (user != null) {
+      try {
+        final foodsData = foods.map((dish) => {
+          ...dish.toJson(),
+          'date': _formatDate(date),
+        }).toList();
+        await SupabaseService.syncEatenDishesForDateToSupabase(user.id, _formatDate(date), foodsData);
+      } catch (e) {
+        if (kDebugMode) {
+          print('Ошибка синхронизации съеденных блюд в Supabase: $e');
+        }
+      }
+    }
   }
 
   String _formatDate(DateTime date) {
@@ -339,7 +479,6 @@ class _FoodPageState extends State<FoodPage> {
     final borderRadius = isSmallScreen ? 20.0 : 24.0;
     final buttonPadding = isSmallScreen ? EdgeInsets.symmetric(horizontal: 24, vertical: 14) : EdgeInsets.symmetric(horizontal: 32, vertical: 16);
     final titleFontSize = isSmallScreen ? 16.0 : 18.0;
-
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -431,7 +570,6 @@ class _FoodPageState extends State<FoodPage> {
     final List<SavedDish> dishes = dishList
         .map((e) => SavedDish.fromJson(e as Map<String, dynamic>))
         .toList();
-
     final ingredientsJson = prefs.getString('ingredients') ?? '[]';
     final List<dynamic> ingredientList = jsonDecode(ingredientsJson);
     final List<Ingredient> ingredients = ingredientList
@@ -455,131 +593,141 @@ class _FoodPageState extends State<FoodPage> {
     }
 
     if (combinedItems.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.grey[900]!,
-          content: Center(
-            child: Text(
-              'Нет сохранённых блюд и ингедиентов',
-              style: TextStyle(
-                color: Colors.red,
-                fontSize: 14.0,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    final isSmallScreen = MediaQuery.of(context).size.height < 700;
-    final dialogWidth = isSmallScreen ? 300.0 : 350.0;
-    final dialogHeight = isSmallScreen ? 350.0 : 400.0;
-    final textFieldFontSize = isSmallScreen ? 12.0 : 14.0;
-    final labelFontSize = isSmallScreen ? 11.0 : 13.0;
-    final listTileFontSize = isSmallScreen ? 12.0 : 14.0;
-    final buttonFontSize = isSmallScreen ? 12.0 : 14.0;
-
-    String searchQuery = '';
-    await showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text(
-          'Выберите блюдо или ингредиент',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: isSmallScreen ? 16.0 : 18.0,
-          ),
-        ),
-        content: SizedBox(
-          width: dialogWidth,
-          height: dialogHeight,
-          child: Column(
-            children: [
-              TextField(
-                onChanged: (value) {
-                  setState(() {
-                    searchQuery = value.toLowerCase();
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Поиск по названию...',
-                  hintStyle: TextStyle(fontSize: labelFontSize),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: Colors.grey,
-                    size: isSmallScreen ? 18.0 : 20.0,
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey[800],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.grey[900]!,
+            content: Center(
+              child: Text(
+                'Нет сохранённых блюд и ингедиентов',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 14.0,
                 ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        return;
+      }
+    }
+    if (context.mounted) {
+      final isSmallScreen = MediaQuery
+          .of(context)
+          .size
+          .height < 700;
+      final dialogWidth = isSmallScreen ? 300.0 : 350.0;
+      final dialogHeight = isSmallScreen ? 350.0 : 400.0;
+      final textFieldFontSize = isSmallScreen ? 12.0 : 14.0;
+      final labelFontSize = isSmallScreen ? 11.0 : 13.0;
+      final listTileFontSize = isSmallScreen ? 12.0 : 14.0;
+      final buttonFontSize = isSmallScreen ? 12.0 : 14.0;
+      String searchQuery = '';
+
+      await showDialog(
+        context: context,
+        builder: (ctx) =>
+            AlertDialog(
+              backgroundColor: Colors.grey[900],
+              title: Text(
+                'Выберите блюдо или ингредиент',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: textFieldFontSize,
+                  fontSize: isSmallScreen ? 16.0 : 18.0,
                 ),
               ),
-              SizedBox(height: isSmallScreen ? 8.0 : 12.0),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: combinedItems.length,
-                  itemBuilder: (context, index) {
-                    final item = combinedItems[index];
-                    if (searchQuery.isNotEmpty &&
-                        !item['name'].toLowerCase().contains(searchQuery)) {
-                      return const SizedBox.shrink();
-                    }
-                    return ListTile(
-                      title: Text(
-                        item['name'],
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: listTileFontSize,
-                        ),
-                      ),
-                      subtitle: Text(
-                        item['type'] == 'dish' ? 'Блюдо' : 'Ингредиент',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: listTileFontSize * 0.9,
-                        ),
-                      ),
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        _showWeightInputForCombinedItem(context, item['type'], item['data']);
+              content: SizedBox(
+                width: dialogWidth,
+                height: dialogHeight,
+                child: Column(
+                  children: [
+                    TextField(
+                      onChanged: (value) {
+                        setState(() {
+                          searchQuery = value.toLowerCase();
+                        });
                       },
-                    );
-                  },
+                      decoration: InputDecoration(
+                        hintText: 'Поиск по названию...',
+                        hintStyle: TextStyle(fontSize: labelFontSize),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                          size: isSmallScreen ? 18.0 : 20.0,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[800],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: textFieldFontSize,
+                      ),
+                    ),
+                    SizedBox(height: isSmallScreen ? 8.0 : 12.0),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: combinedItems.length,
+                        itemBuilder: (context, index) {
+                          final item = combinedItems[index];
+                          if (searchQuery.isNotEmpty &&
+                              !item['name'].toLowerCase().contains(
+                                  searchQuery)) {
+                            return const SizedBox.shrink();
+                          }
+                          return ListTile(
+                            title: Text(
+                              item['name'],
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: listTileFontSize,
+                              ),
+                            ),
+                            subtitle: Text(
+                              item['type'] == 'dish' ? 'Блюдо' : 'Ингредиент',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: listTileFontSize * 0.9,
+                              ),
+                            ),
+                            onTap: () {
+                              Navigator.pop(ctx);
+                              _showWeightInputForCombinedItem(
+                                  context, item['type'], item['data']);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'Отмена',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: buttonFontSize,
-              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text(
+                    'Отмена',
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: buttonFontSize,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
-    );
+      );
+    }
   }
+
 
   Future<void> _showWeightInputForCombinedItem(
       BuildContext context, String itemType, dynamic itemData) async {
@@ -734,7 +882,9 @@ class _FoodPageState extends State<FoodPage> {
               _currentDayEatenFoods.add(eatenDish);
               await _saveEatenFoodsForDate(_selectedDate, _currentDayEatenFoods);
               setState(() {});
-              Navigator.of(ctx).pop();
+              if (context.mounted) {
+                Navigator.of(ctx).pop();
+              }
             },
             child: Text(
               'Добавить',
@@ -758,6 +908,7 @@ class _FoodPageState extends State<FoodPage> {
   Future<void> _showCreateDishDialog(BuildContext context) async {
     _currentDishIngredients.clear();
     _dishNameController.clear();
+
     final isSmallScreen = MediaQuery.of(context).size.height < 700;
     final dialogPadding = isSmallScreen ? EdgeInsets.all(12) : EdgeInsets.all(16);
     final buttonFontSize = isSmallScreen ? 14.0 : 16.0;
@@ -784,13 +935,11 @@ class _FoodPageState extends State<FoodPage> {
             ),
             content: SizedBox(
               width: double.maxFinite,
-              // Ограничиваем высоту content, чтобы он не растягивался бесконечно
-              // и появилась возможность прокрутки только для списка ингредиентов
-              height: MediaQuery.of(context).size.height * 0.6, // Пример: 60% высоты экрана
+              height: MediaQuery.of(context).size.height * 0.6,
               child: Padding(
                 padding: dialogPadding,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min, // Важно: не max
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       controller: _dishNameController,
@@ -821,7 +970,10 @@ class _FoodPageState extends State<FoodPage> {
                         final List<Ingredient> allIngredients = list
                             .map((e) => Ingredient.fromJson(e as Map<String, dynamic>))
                             .toList();
-                        await _showIngredientPicker(context, allIngredients, setState);
+                        if (context.mounted) {
+                          await _showIngredientPicker(
+                              context, allIngredients, setState);
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
@@ -837,8 +989,6 @@ class _FoodPageState extends State<FoodPage> {
                       ),
                     ),
                     SizedBox(height: isSmallScreen ? 10.0 : 12.0),
-                    // Оборачиваем список ингредиентов в Expanded и ListView
-                    // для создания прокручиваемой области
                     Expanded(
                       child: _currentDishIngredients.isEmpty
                           ? Center(
@@ -936,12 +1086,16 @@ class _FoodPageState extends State<FoodPage> {
                     );
                     return;
                   }
+
                   double totalWeight = _currentDishIngredients.fold(0.0, (sum, e) => sum + e.weight);
                   if (totalWeight <= 0) return;
+
                   for (var entry in _currentDishIngredients) {
                     double _ = entry.weight / 100.0;
                   }
+
                   double _ = 100.0 / totalWeight;
+
                   final prefs = await SharedPreferences.getInstance();
                   final dishesJson = prefs.getString('dishes') ?? '[]';
                   final List<dynamic> existing = jsonDecode(dishesJson);
@@ -954,29 +1108,43 @@ class _FoodPageState extends State<FoodPage> {
                     })
                         .toList(),
                   };
+
                   existing.add(newDish);
                   await prefs.setString('dishes', jsonEncode(existing));
-                  Navigator.of(ctx).pop();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.grey[900]!,
-                      content: Center(
-                        child: Text(
-                          'Блюдо сохранено',
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 14.0,
+                  final user = SupabaseHelper.client.auth.currentUser;
+                  if (user != null) {
+                    try {
+                      final dishesData = existing.map((e) => e as Map<String, dynamic>).toList();
+                      await SupabaseService.syncDishesToSupabase(user.id, dishesData);
+                    } catch (e) {
+                      if (kDebugMode) {
+                        print('Ошибка синхронизации блюд в Supabase: $e');
+                      }
+                    }
+                  }
+                  if (context.mounted) {
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.grey[900]!,
+                        content: Center(
+                          child: Text(
+                            'Блюдо сохранено',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 14.0,
+                            ),
+                            textAlign: TextAlign.center,
                           ),
-                          textAlign: TextAlign.center,
                         ),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8.0),
+                        ),
+                        duration: const Duration(seconds: 2),
                       ),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
+                    );
+                  }
                 },
                 child: Text(
                   'Сохранить',
@@ -996,6 +1164,7 @@ class _FoodPageState extends State<FoodPage> {
   Future<void> _showIngredientPicker(
       BuildContext context, List<Ingredient> ingredients, StateSetter setState) async {
     String searchQuery = '';
+
     final isSmallScreen = MediaQuery.of(context).size.height < 700;
     final dialogWidth = isSmallScreen ? 300.0 : 350.0;
     final dialogHeight = isSmallScreen ? 350.0 : 400.0;
@@ -1125,6 +1294,7 @@ class _FoodPageState extends State<FoodPage> {
   Future<void> _showWeightInput(
       BuildContext context, Ingredient ingredient, StateSetter setState) async {
     final weightController = TextEditingController();
+
     final isSmallScreen = MediaQuery.of(context).size.height < 700;
     final textFieldFontSize = isSmallScreen ? 12.0 : 14.0;
     final labelFontSize = isSmallScreen ? 11.0 : 13.0;
@@ -1231,20 +1401,22 @@ class _FoodPageState extends State<FoodPage> {
 class DishIngredientEntry {
   final Ingredient ingredient;
   final double weight;
+
   DishIngredientEntry(this.ingredient, this.weight);
 }
 
 class SavedDish {
   final String name;
   final List<DishIngredient> ingredients;
+
   SavedDish({required this.name, required this.ingredients});
 
   factory SavedDish.fromJson(Map<String, dynamic> json) {
     return SavedDish(
-      name: json['name'] as String,
-      ingredients: (json['ingredients'] as List)
-          .map((e) => DishIngredient.fromJson(e as Map<String, dynamic>))
-          .toList(),
+      name: json['name'] as String? ?? '',
+      ingredients: (json['ingredients'] as List?)
+          ?.map((e) => DishIngredient.fromJson(e as Map<String, dynamic>))
+          .toList() ?? [],
     );
   }
 }
@@ -1252,12 +1424,13 @@ class SavedDish {
 class DishIngredient {
   final String ingredientName;
   final double weight;
+
   DishIngredient({required this.ingredientName, required this.weight});
 
   factory DishIngredient.fromJson(Map<String, dynamic> json) {
     return DishIngredient(
-      ingredientName: json['ingredient_name'] as String,
-      weight: (json['weight'] as num).toDouble(),
+      ingredientName: json['ingredient_name'] as String? ?? '',
+      weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
@@ -1290,12 +1463,12 @@ class EatenDish {
 
   factory EatenDish.fromJson(Map<String, dynamic> json) {
     return EatenDish(
-      name: json['name'] as String,
-      weight: (json['weight'] as num).toDouble(),
-      totalKcal: (json['total_kcal'] as num).toDouble(),
-      totalProtein: (json['total_protein'] as num).toDouble(),
-      totalFat: (json['total_fat'] as num).toDouble(),
-      totalCarbs: (json['total_carbs'] as num).toDouble(),
+      name: json['name'] as String? ?? json['dish_name'] as String? ?? '',
+      weight: (json['weight'] as num?)?.toDouble() ?? 0.0,
+      totalKcal: (json['total_kcal'] as num?)?.toDouble() ?? 0.0,
+      totalProtein: (json['total_protein'] as num?)?.toDouble() ?? 0.0,
+      totalFat: (json['total_fat'] as num?)?.toDouble() ?? 0.0,
+      totalCarbs: (json['total_carbs'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

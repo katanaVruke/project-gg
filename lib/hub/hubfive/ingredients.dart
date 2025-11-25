@@ -1,8 +1,11 @@
 // lib/hub/hubFive/ingredients.dart
+import 'package:Elite_KA/hub/hubfive/api_product_search.dart';
+import 'package:Elite_KA/supabase/supabase_helper.dart';
+import 'package:Elite_KA/supabase/supabase_service.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:Elite_KA/hub/hubfive/api_product_search.dart';
 
 class Ingredient {
   final String name;
@@ -66,6 +69,27 @@ class _IngredientsPageState extends State<IngredientsPage> {
     final jsonString = jsonEncode(ingredients.map((i) => i.toJson()).toList());
     await prefs.setString('ingredients', jsonString);
   }
+  Future<void> _loadIngredientsFromSupabase() async {
+    final user = SupabaseHelper.client.auth.currentUser;
+    if (user != null) {
+      try {
+        final supabaseIngredients = await SupabaseService.getUserIngredients(user.id);
+        if (supabaseIngredients != null) {
+          final ingredients = supabaseIngredients.map((json) => Ingredient.fromJson(json)).toList();
+          await _saveIngredients(ingredients);
+          if (mounted) {
+            setState(() {
+              _ingredientsFuture = Future.value(ingredients);
+            });
+          }
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('Ошибка загрузки ингредиентов из Supabase: $e');
+        }
+      }
+    }
+  }
 
   String _filterNumeric(String input) {
     final filtered = input.replaceAll(RegExp(r'[^0-9.]'), '');
@@ -76,25 +100,25 @@ class _IngredientsPageState extends State<IngredientsPage> {
     return filtered;
   }
 
+  void bindNumericFilter(TextEditingController ctrl) {
+    ctrl.addListener(() {
+      final text = ctrl.text;
+      final filtered = _filterNumeric(text);
+      if (text != filtered) {
+        ctrl.value = TextEditingValue(
+          text: filtered,
+          selection: TextSelection.collapsed(offset: filtered.length),
+        );
+      }
+    });
+  }
+
   Future<void> _showAddDialog() async {
     final nameController = TextEditingController();
     final kcalController = TextEditingController();
     final proteinController = TextEditingController();
     final fatController = TextEditingController();
     final carbsController = TextEditingController();
-
-    void bindNumericFilter(TextEditingController ctrl) {
-      ctrl.addListener(() {
-        final text = ctrl.text;
-        final filtered = _filterNumeric(text);
-        if (text != filtered) {
-          ctrl.value = TextEditingValue(
-            text: filtered,
-            selection: TextSelection.collapsed(offset: filtered.length),
-          );
-        }
-      });
-    }
 
     [kcalController, proteinController, fatController, carbsController]
         .forEach(bindNumericFilter);
@@ -168,7 +192,7 @@ class _IngredientsPageState extends State<IngredientsPage> {
                               vertical: isSmallScreen ? 8 : 12,
                             ),
                           ),
-                          onPressed: () {
+                          onPressed: () async {
                             if (nameController.text.trim().isEmpty) return;
                             final ingredient = Ingredient(
                               name: nameController.text.trim(),
@@ -178,7 +202,7 @@ class _IngredientsPageState extends State<IngredientsPage> {
                               carbs: double.tryParse(carbsController.text) ?? 0.0,
                             );
                             Navigator.of(ctx).pop();
-                            _addIngredient(ingredient);
+                            await _addIngredient(ingredient);
                           },
                           child: Text('Добавить', style: TextStyle(color: Colors.white, fontSize: buttonFontSize)),
                         ),
@@ -200,19 +224,6 @@ class _IngredientsPageState extends State<IngredientsPage> {
     final proteinController = TextEditingController(text: ingredient.protein.toString());
     final fatController = TextEditingController(text: ingredient.fat.toString());
     final carbsController = TextEditingController(text: ingredient.carbs.toString());
-
-    void bindNumericFilter(TextEditingController ctrl) {
-      ctrl.addListener(() {
-        final text = ctrl.text;
-        final filtered = _filterNumeric(text);
-        if (text != filtered) {
-          ctrl.value = TextEditingValue(
-            text: filtered,
-            selection: TextSelection.collapsed(offset: filtered.length),
-          );
-        }
-      });
-    }
 
     [kcalController, proteinController, fatController, carbsController]
         .forEach(bindNumericFilter);
@@ -286,7 +297,7 @@ class _IngredientsPageState extends State<IngredientsPage> {
                               vertical: isSmallScreen ? 8 : 12,
                             ),
                           ),
-                          onPressed: () {
+                          onPressed: () async {
                             final updated = Ingredient(
                               name: nameController.text.trim(),
                               kcal: double.tryParse(kcalController.text) ?? 0.0,
@@ -295,7 +306,7 @@ class _IngredientsPageState extends State<IngredientsPage> {
                               carbs: double.tryParse(carbsController.text) ?? 0.0,
                             );
                             Navigator.of(ctx).pop();
-                            _updateIngredient(ingredient, updated);
+                            await _updateIngredient(ingredient, updated);
                           },
                           child: Text('Сохранить', style: TextStyle(color: Colors.white, fontSize: buttonFontSize)),
                         ),
@@ -327,7 +338,7 @@ class _IngredientsPageState extends State<IngredientsPage> {
                               vertical: isSmallScreen ? 8 : 12,
                             ),
                           ),
-                          onPressed: () {
+                          onPressed: () async {
                             final updated = Ingredient(
                               name: nameController.text.trim(),
                               kcal: double.tryParse(kcalController.text) ?? 0.0,
@@ -336,7 +347,7 @@ class _IngredientsPageState extends State<IngredientsPage> {
                               carbs: double.tryParse(carbsController.text) ?? 0.0,
                             );
                             Navigator.of(ctx).pop();
-                            _updateIngredient(ingredient, updated);
+                            await _updateIngredient(ingredient, updated);
                           },
                           child: Text('Сохранить', style: TextStyle(color: Colors.white, fontSize: buttonFontSize)),
                         ),
@@ -359,7 +370,7 @@ class _IngredientsPageState extends State<IngredientsPage> {
         color: Colors.white,
         fontSize: isSmallScreen ? 12.0 : 14.0,
       ),
-      keyboardType: TextInputType.numberWithOptions(decimal: true),
+      keyboardType: TextInputType.text,
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
@@ -385,49 +396,13 @@ class _IngredientsPageState extends State<IngredientsPage> {
       existing.name.trim().toLowerCase() == ingredient.name.trim().toLowerCase(),
     );
     if (exists) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.grey[900],
-          content: Center(
-            child: Text(
-              'Ингредиент "${ingredient.name}" уже существует',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.red, fontSize: 14),
-            ),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      return;
-    }
-
-    ingredients.add(ingredient);
-    await _saveIngredients(ingredients);
-    setState(() {
-      _ingredientsFuture = _loadIngredients();
-    });
-  }
-
-  Future<void> _updateIngredient(Ingredient old, Ingredient updated) async {
-    final ingredients = await _loadIngredients();
-
-    if (old.name.trim().toLowerCase() != updated.name.trim().toLowerCase()) {
-      final exists = ingredients.any(
-            (ing) =>
-        ing.name.trim().toLowerCase() == updated.name.trim().toLowerCase(),
-      );
-      if (exists) {
-        if (!context.mounted) return;
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             backgroundColor: Colors.grey[900],
             content: Center(
               child: Text(
-                'Ингредиент "${updated.name}" уже существует',
+                'Ингредиент "${ingredient.name}" уже существует',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.red, fontSize: 14),
               ),
@@ -442,6 +417,56 @@ class _IngredientsPageState extends State<IngredientsPage> {
       }
     }
 
+    ingredients.add(ingredient);
+    await _saveIngredients(ingredients);
+
+    final user = SupabaseHelper.client.auth.currentUser;
+    if (user != null) {
+      try {
+        await SupabaseService.addIngredient(user.id, ingredient.toJson());
+      } catch (e) {
+        if (kDebugMode) {
+          print('Ошибка добавления ингредиента в Supabase: $e');
+        }
+      }
+    }
+
+    setState(() {
+      _ingredientsFuture = _loadIngredients();
+    });
+  }
+
+  Future<void> _updateIngredient(Ingredient old, Ingredient updated) async {
+    final ingredients = await _loadIngredients();
+
+    if (old.name.trim().toLowerCase() != updated.name.trim().toLowerCase()) {
+      final exists = ingredients.any(
+            (ing) =>
+        ing.name.trim().toLowerCase() == updated.name.trim().toLowerCase(),
+      );
+      if (exists) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.grey[900],
+              content: Center(
+                child: Text(
+                  'Ингредиент "${updated.name}" уже существует',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.red, fontSize: 14),
+                ),
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          return;
+        }
+      }
+    }
+
     final index = ingredients.indexWhere((i) =>
     i.name == old.name &&
         i.kcal == old.kcal &&
@@ -452,6 +477,18 @@ class _IngredientsPageState extends State<IngredientsPage> {
     if (index != -1) {
       ingredients[index] = updated;
       await _saveIngredients(ingredients);
+
+      final user = SupabaseHelper.client.auth.currentUser;
+      if (user != null) {
+        try {
+          await SupabaseService.updateIngredient(user.id, old.name, updated.toJson());
+        } catch (e) {
+          if (kDebugMode) {
+            print('Ошибка обновления ингредиента в Supabase: $e');
+          }
+        }
+      }
+
       setState(() {
         _ingredientsFuture = _loadIngredients();
       });
@@ -467,6 +504,17 @@ class _IngredientsPageState extends State<IngredientsPage> {
         i.fat == ingredient.fat &&
         i.carbs == ingredient.carbs);
     await _saveIngredients(ingredients);
+    final user = SupabaseHelper.client.auth.currentUser;
+    if (user != null) {
+      try {
+        await SupabaseService.deleteIngredient(user.id, ingredient.name);
+      } catch (e) {
+        if (kDebugMode) {
+          print('Ошибка удаления ингредиента из Supabase: $e');
+        }
+      }
+    }
+
     setState(() {
       _ingredientsFuture = _loadIngredients();
     });
@@ -499,6 +547,12 @@ class _IngredientsPageState extends State<IngredientsPage> {
         scrolledUnderElevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: Colors.white),
+            onPressed: _loadIngredientsFromSupabase,
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
