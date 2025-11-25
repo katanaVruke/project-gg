@@ -25,7 +25,6 @@ class _ProfilePageState extends State<ProfilePage> {
   String? selectedTarget;
   String? selectedActivityLevel;
 
-  // Временные переменные для хранения изменений до подтверждения
   String? _tempGender;
   int? _tempAge;
   double? _tempWeight;
@@ -53,7 +52,6 @@ class _ProfilePageState extends State<ProfilePage> {
       selectedTarget = prefs.getString('selectedTarget');
       selectedActivityLevel = prefs.getString('selectedActivityLevel');
 
-      // Инициализируем временные переменные
       _tempGender = selectedGender;
       _tempAge = selectedAge;
       _tempWeight = selectedWeight;
@@ -88,7 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
       case 'moderate':
         return '(3 тренировки в неделю)';
       case 'high':
-        return '(4-5 тренировки в неделю)';
+        return '(4-5 тренировок в неделю)';
       default:
         return '';
     }
@@ -113,16 +111,17 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final isSmallScreen = screenHeight < 700;
-
     final subtitleFontSize = isSmallScreen ? 14.0 : 16.0;
     final itemFontSize = isSmallScreen ? 14.0 : 16.0;
     final paddingValue = isSmallScreen ? 16.0 : 20.0;
     final heightValue = isSmallScreen ? 24.0 : 30.0;
 
-    return WillPopScope(
-      onWillPop: () async {
-        // При возврате через системную кнопку не сохраняем изменения
-        return true;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) {
+          return;
+        }
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -146,9 +145,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 size: isSmallScreen ? 24 : 28,
               ),
               onPressed: () async {
-                // Сохраняем все изменения в shared_preferences и supabase
+                final navigator = Navigator.of(context);
                 await _saveAllChanges();
-                Navigator.pop(context);
+                if (mounted) {
+                  navigator.pop();
+                }
               },
             ),
             SizedBox(width: 8),
@@ -275,7 +276,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   SizedBox(height: heightValue),
-                  // Add the new Activity section
                   GestureDetector(
                     onTap: () async {
                       final result = await Navigator.push(
@@ -359,7 +359,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     child: Column(
                       children: [
-                        // Пол
                         GestureDetector(
                           onTap: () => _showGenderSelection(),
                           child: Padding(
@@ -598,100 +597,165 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _showGenderSelection() async {
     final screenHeight = MediaQuery.of(context).size.height;
     final isSmallScreen = screenHeight < 700;
+
     String? newGender = _tempGender;
     await showDialog<String>(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.grey[800],
-          title: Text(
-            'Выберите пол',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: isSmallScreen ? 18.0 : 20.0,
+          title: Center(
+            child: Text(
+              'Выберите пол',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isSmallScreen ? 20.0 : 22.0,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           content: StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  RadioListTile<String>(
-                    title: Text(
-                      'Мужской',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isSmallScreen ? 14.0 : 16.0,
+              return SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          newGender = 'male';
+                        });
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+                        margin: EdgeInsets.symmetric(vertical: 8.0),
+                        decoration: BoxDecoration(
+                          color: newGender == 'male' ? Colors.grey[900] : Colors.grey[850],
+                          borderRadius: BorderRadius.circular(10.0),
+                          border: Border.all(
+                            color: newGender == 'male' ? Colors.red : Colors.grey[700]!,
+                            width: newGender == 'male' ? 2.0 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              newGender == 'male' ? Icons.check_circle : Icons.circle_outlined,
+                              color: Colors.red,
+                              size: 28.0,
+                            ),
+                            SizedBox(width: 32.0),
+                            Text(
+                              'Мужской',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: isSmallScreen ? 16.0 : 18.0,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(width: 32.0),
+                          ],
+                        ),
                       ),
                     ),
-                    value: 'male',
-                    groupValue: newGender,
-                    onChanged: (value) {
-                      setState(() {
-                        newGender = value;
-                      });
-                    },
-                    activeColor: Colors.red,
-                    selected: newGender == 'male',
-                    selectedTileColor: Colors.grey[700],
-                  ),
-                  RadioListTile<String>(
-                    title: Text(
-                      'Женский',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isSmallScreen ? 14.0 : 16.0,
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          newGender = 'female';
+                        });
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+                        margin: EdgeInsets.symmetric(vertical: 8.0),
+                        decoration: BoxDecoration(
+                          color: newGender == 'female' ? Colors.grey[900] : Colors.grey[850],
+                          borderRadius: BorderRadius.circular(10.0),
+                          border: Border.all(
+                            color: newGender == 'female' ? Colors.red : Colors.grey[700]!,
+                            width: newGender == 'female' ? 2.0 : 1.0,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              newGender == 'female' ? Icons.check_circle : Icons.circle_outlined,
+                              color: Colors.red,
+                              size: 28.0,
+                            ),
+                            SizedBox(width: 32.0),
+                            Text(
+                              'Женский',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: isSmallScreen ? 16.0 : 18.0,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(width: 32.0),
+                          ],
+                        ),
                       ),
                     ),
-                    value: 'female',
-                    groupValue: newGender,
-                    onChanged: (value) {
-                      setState(() {
-                        newGender = value;
-                      });
-                    },
-                    activeColor: Colors.red,
-                    selected: newGender == 'female',
-                    selectedTileColor: Colors.grey[700],
-                  ),
-                ],
+                  ],
+                ),
               );
             },
           ),
           actions: <Widget>[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(
-                    'Отмена',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: isSmallScreen ? 14.0 : 16.0,
+            Padding(
+              padding: EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[800],
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    child: Text(
+                      'Отмена',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 14.0 : 16.0,
+                      ),
                     ),
                   ),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    if (newGender != null) {
-                      setState(() {
-                        _tempGender = newGender;
-                      });
-                    }
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(
-                    'Сохранить',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: isSmallScreen ? 14.0 : 16.0,
+                  ElevatedButton(
+                    onPressed: () async {
+                      if (newGender != null) {
+                        setState(() {
+                          _tempGender = newGender;
+                        });
+                      }
+                      Navigator.of(context).pop();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                    ),
+                    child: Text(
+                      'Сохранить',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 14.0 : 16.0,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         );
@@ -717,41 +781,41 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           content: StatefulBuilder(
-              builder: (context, setState) {
-                return SizedBox(
-                  height: isSmallScreen ? 160 : 200,
-                  child: ListWheelScrollView.useDelegate(
-                    itemExtent: isSmallScreen ? 32.0 : 40.0,
-                    diameterRatio: 1.2,
-                    perspective: 0.002,
-                    controller: FixedExtentScrollController(initialItem: currentAgeValue - 15),
-                    onSelectedItemChanged: (index) {
-                      int newAge = index + 15;
-                      setState(() {
-                        currentAgeValue = newAge;
-                      });
-                    },
-                    childDelegate: ListWheelChildBuilderDelegate(
-                      builder: (context, index) {
-                        int age = index + 15;
-                        bool isSelected = age == currentAgeValue;
-                        return Container(
-                          alignment: Alignment.center,
-                          child: Text(
-                            '$age',
-                            style: TextStyle(
-                              fontSize: isSmallScreen ? 16.0 : 20.0,
-                              color: isSelected ? Colors.white : Colors.grey[400],
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
+            builder: (context, setState) {
+              return SizedBox(
+                height: isSmallScreen ? 160 : 200,
+                child: ListWheelScrollView.useDelegate(
+                  itemExtent: isSmallScreen ? 32.0 : 40.0,
+                  diameterRatio: 1.2,
+                  perspective: 0.002,
+                  controller: FixedExtentScrollController(initialItem: currentAgeValue - 15),
+                  onSelectedItemChanged: (index) {
+                    int newAge = index + 15;
+                    setState(() {
+                      currentAgeValue = newAge;
+                    });
+                  },
+                  childDelegate: ListWheelChildBuilderDelegate(
+                    builder: (context, index) {
+                      int age = index + 15;
+                      bool isSelected = age == currentAgeValue;
+                      return Container(
+                        alignment: Alignment.center,
+                        child: Text(
+                          '$age',
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 16.0 : 20.0,
+                            color: isSelected ? Colors.white : Colors.grey[400],
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           ),
-                        );
-                      },
-                      childCount: 56,
-                    ),
+                        ),
+                      );
+                    },
+                    childCount: 56,
                   ),
-                );
-              }
+                ),
+              );
+            },
           ),
           actions: <Widget>[
             Row(
@@ -810,90 +874,90 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           content: StatefulBuilder(
-              builder: (context, setState) {
-                return Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: isSmallScreen ? 160 : 200,
-                        child: ListWheelScrollView.useDelegate(
-                          itemExtent: isSmallScreen ? 40.0 : 50.0,
-                          diameterRatio: 1.2,
-                          perspective: 0.002,
-                          physics: const FixedExtentScrollPhysics(),
-                          controller: FixedExtentScrollController(
-                            initialItem: (currentHeightValue.truncate() - 100),
-                          ),
-                          onSelectedItemChanged: (index) {
-                            int wholePart = index + 100;
-                            double newHeight = wholePart + (currentHeightValue % 1);
-                            setState(() {
-                              currentHeightValue = newHeight;
-                            });
-                          },
-                          childDelegate: ListWheelChildBuilderDelegate(
-                            builder: (context, index) {
-                              int value = index + 100;
-                              double tempHeight = value + (currentHeightValue % 1);
-                              bool isSelected = (tempHeight - currentHeightValue).abs() < 0.001;
-                              return Center(
-                                child: Text(
-                                  '$value',
-                                  style: TextStyle(
-                                    fontSize: isSmallScreen ? 20.0 : 24.0,
-                                    color: isSelected ? Colors.white : Colors.grey[400],
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  ),
+            builder: (context, setState) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: isSmallScreen ? 160 : 200,
+                      child: ListWheelScrollView.useDelegate(
+                        itemExtent: isSmallScreen ? 40.0 : 50.0,
+                        diameterRatio: 1.2,
+                        perspective: 0.002,
+                        physics: const FixedExtentScrollPhysics(),
+                        controller: FixedExtentScrollController(
+                          initialItem: (currentHeightValue.truncate() - 100),
+                        ),
+                        onSelectedItemChanged: (index) {
+                          int wholePart = index + 100;
+                          double newHeight = wholePart + (currentHeightValue % 1);
+                          setState(() {
+                            currentHeightValue = newHeight;
+                          });
+                        },
+                        childDelegate: ListWheelChildBuilderDelegate(
+                          builder: (context, index) {
+                            int value = index + 100;
+                            double tempHeight = value + (currentHeightValue % 1);
+                            bool isSelected = (tempHeight - currentHeightValue).abs() < 0.001;
+                            return Center(
+                              child: Text(
+                                '$value',
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 20.0 : 24.0,
+                                  color: isSelected ? Colors.white : Colors.grey[400],
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                 ),
-                              );
-                            },
-                            childCount: 151,
-                          ),
+                              ),
+                            );
+                          },
+                          childCount: 151,
                         ),
                       ),
                     ),
-                    Expanded(
-                      child: SizedBox(
-                        height: isSmallScreen ? 160 : 200,
-                        child: ListWheelScrollView.useDelegate(
-                          itemExtent: isSmallScreen ? 40.0 : 50.0,
-                          diameterRatio: 1.2,
-                          perspective: 0.002,
-                          physics: const FixedExtentScrollPhysics(),
-                          controller: FixedExtentScrollController(
-                            initialItem: ((currentHeightValue * 10) % 10).toInt(),
-                          ),
-                          onSelectedItemChanged: (index) {
+                  ),
+                  Expanded(
+                    child: SizedBox(
+                      height: isSmallScreen ? 160 : 200,
+                      child: ListWheelScrollView.useDelegate(
+                        itemExtent: isSmallScreen ? 40.0 : 50.0,
+                        diameterRatio: 1.2,
+                        perspective: 0.002,
+                        physics: const FixedExtentScrollPhysics(),
+                        controller: FixedExtentScrollController(
+                          initialItem: ((currentHeightValue * 10) % 10).toInt(),
+                        ),
+                        onSelectedItemChanged: (index) {
+                          double decimalPart = index / 10.0;
+                          double newHeight = (currentHeightValue.truncate()) + decimalPart;
+                          setState(() {
+                            currentHeightValue = newHeight;
+                          });
+                        },
+                        childDelegate: ListWheelChildBuilderDelegate(
+                          builder: (context, index) {
                             double decimalPart = index / 10.0;
-                            double newHeight = (currentHeightValue.truncate()) + decimalPart;
-                            setState(() {
-                              currentHeightValue = newHeight;
-                            });
-                          },
-                          childDelegate: ListWheelChildBuilderDelegate(
-                            builder: (context, index) {
-                              double decimalPart = index / 10.0;
-                              double tempHeight = (currentHeightValue.truncate()) + decimalPart;
-                              bool isSelected = (tempHeight - currentHeightValue).abs() < 0.001;
-                              return Center(
-                                child: Text(
-                                  '.${index.toString()}',
-                                  style: TextStyle(
-                                    fontSize: isSmallScreen ? 20.0 : 24.0,
-                                    color: isSelected ? Colors.white : Colors.grey[400],
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  ),
+                            double tempHeight = (currentHeightValue.truncate()) + decimalPart;
+                            bool isSelected = (tempHeight - currentHeightValue).abs() < 0.001;
+                            return Center(
+                              child: Text(
+                                '.${index.toString()}',
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 20.0 : 24.0,
+                                  color: isSelected ? Colors.white : Colors.grey[400],
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                 ),
-                              );
-                            },
-                            childCount: 10,
-                          ),
+                              ),
+                            );
+                          },
+                          childCount: 10,
                         ),
                       ),
                     ),
-                  ],
-                );
-              }
+                  ),
+                ],
+              );
+            },
           ),
           actions: <Widget>[
             Row(
@@ -952,90 +1016,90 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
           content: StatefulBuilder(
-              builder: (context, setState) {
-                return Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: isSmallScreen ? 160 : 200,
-                        child: ListWheelScrollView.useDelegate(
-                          itemExtent: isSmallScreen ? 40.0 : 50.0,
-                          diameterRatio: 1.2,
-                          perspective: 0.002,
-                          physics: const FixedExtentScrollPhysics(),
-                          controller: FixedExtentScrollController(
-                            initialItem: (currentWeightValue.truncate() - 40),
-                          ),
-                          onSelectedItemChanged: (index) {
-                            int wholePart = index + 40;
-                            double newWeight = wholePart + (currentWeightValue % 1);
-                            setState(() {
-                              currentWeightValue = newWeight;
-                            });
-                          },
-                          childDelegate: ListWheelChildBuilderDelegate(
-                            builder: (context, index) {
-                              int value = index + 40;
-                              double tempWeight = value + (currentWeightValue % 1);
-                              bool isSelected = (tempWeight - currentWeightValue).abs() < 0.001;
-                              return Center(
-                                child: Text(
-                                  '$value',
-                                  style: TextStyle(
-                                    fontSize: isSmallScreen ? 20.0 : 24.0,
-                                    color: isSelected ? Colors.white : Colors.grey[400],
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  ),
+            builder: (context, setState) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: isSmallScreen ? 160 : 200,
+                      child: ListWheelScrollView.useDelegate(
+                        itemExtent: isSmallScreen ? 40.0 : 50.0,
+                        diameterRatio: 1.2,
+                        perspective: 0.002,
+                        physics: const FixedExtentScrollPhysics(),
+                        controller: FixedExtentScrollController(
+                          initialItem: (currentWeightValue.truncate() - 40),
+                        ),
+                        onSelectedItemChanged: (index) {
+                          int wholePart = index + 40;
+                          double newWeight = wholePart + (currentWeightValue % 1);
+                          setState(() {
+                            currentWeightValue = newWeight;
+                          });
+                        },
+                        childDelegate: ListWheelChildBuilderDelegate(
+                          builder: (context, index) {
+                            int value = index + 40;
+                            double tempWeight = value + (currentWeightValue % 1);
+                            bool isSelected = (tempWeight - currentWeightValue).abs() < 0.001;
+                            return Center(
+                              child: Text(
+                                '$value',
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 20.0 : 24.0,
+                                  color: isSelected ? Colors.white : Colors.grey[400],
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                 ),
-                              );
-                            },
-                            childCount: 111,
-                          ),
+                              ),
+                            );
+                          },
+                          childCount: 111,
                         ),
                       ),
                     ),
-                    Expanded(
-                      child: SizedBox(
-                        height: isSmallScreen ? 160 : 200,
-                        child: ListWheelScrollView.useDelegate(
-                          itemExtent: isSmallScreen ? 40.0 : 50.0,
-                          diameterRatio: 1.2,
-                          perspective: 0.002,
-                          physics: const FixedExtentScrollPhysics(),
-                          controller: FixedExtentScrollController(
-                            initialItem: ((currentWeightValue * 10) % 10).toInt(),
-                          ),
-                          onSelectedItemChanged: (index) {
+                  ),
+                  Expanded(
+                    child: SizedBox(
+                      height: isSmallScreen ? 160 : 200,
+                      child: ListWheelScrollView.useDelegate(
+                        itemExtent: isSmallScreen ? 40.0 : 50.0,
+                        diameterRatio: 1.2,
+                        perspective: 0.002,
+                        physics: const FixedExtentScrollPhysics(),
+                        controller: FixedExtentScrollController(
+                          initialItem: ((currentWeightValue * 10) % 10).toInt(),
+                        ),
+                        onSelectedItemChanged: (index) {
+                          double decimalPart = index / 10.0;
+                          double newWeight = (currentWeightValue.truncate()) + decimalPart;
+                          setState(() {
+                            currentWeightValue = newWeight;
+                          });
+                        },
+                        childDelegate: ListWheelChildBuilderDelegate(
+                          builder: (context, index) {
                             double decimalPart = index / 10.0;
-                            double newWeight = (currentWeightValue.truncate()) + decimalPart;
-                            setState(() {
-                              currentWeightValue = newWeight;
-                            });
-                          },
-                          childDelegate: ListWheelChildBuilderDelegate(
-                            builder: (context, index) {
-                              double decimalPart = index / 10.0;
-                              double tempWeight = (currentWeightValue.truncate()) + decimalPart;
-                              bool isSelected = (tempWeight - currentWeightValue).abs() < 0.001;
-                              return Center(
-                                child: Text(
-                                  '.${index.toString()}',
-                                  style: TextStyle(
-                                    fontSize: isSmallScreen ? 20.0 : 24.0,
-                                    color: isSelected ? Colors.white : Colors.grey[400],
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  ),
+                            double tempWeight = (currentWeightValue.truncate()) + decimalPart;
+                            bool isSelected = (tempWeight - currentWeightValue).abs() < 0.001;
+                            return Center(
+                              child: Text(
+                                '.${index.toString()}',
+                                style: TextStyle(
+                                  fontSize: isSmallScreen ? 20.0 : 24.0,
+                                  color: isSelected ? Colors.white : Colors.grey[400],
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                                 ),
-                              );
-                            },
-                            childCount: 10,
-                          ),
+                              ),
+                            );
+                          },
+                          childCount: 10,
                         ),
                       ),
                     ),
-                  ],
-                );
-              }
+                  ),
+                ],
+              );
+            },
           ),
           actions: <Widget>[
             Row(
@@ -1091,7 +1155,6 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
-
     if (result != null) {
       setState(() {
         _tempFatPercentage = result as String;
@@ -1101,8 +1164,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _saveAllChanges() async {
     final prefs = await SharedPreferences.getInstance();
-
-    // Сохраняем все временные изменения в shared_preferences
     await prefs.setString('selectedGender', _tempGender ?? '');
     await prefs.setInt('selectedAge', _tempAge ?? 0);
     await prefs.setDouble('selectedWeight', _tempWeight ?? 0.0);
@@ -1112,10 +1173,8 @@ class _ProfilePageState extends State<ProfilePage> {
     await prefs.setString('selectedTarget', _tempTarget ?? '');
     await prefs.setString('selectedActivityLevel', _tempActivityLevel ?? '');
 
-    // Синхронизируем с Supabase
     final user = SupabaseHelper.client.auth.currentUser;
     if (user != null) {
-      // Обновляем основной профиль
       await SupabaseService.updateUserProfile(
         user.id,
         selectedGender: _tempGender,
@@ -1125,8 +1184,6 @@ class _ProfilePageState extends State<ProfilePage> {
         selectedFatPercentage: _tempFatPercentage,
         selectedEquipment: _tempEquipment,
       );
-
-      // Обновляем цели и активности
       await SupabaseService.updateUserGoalsAndActivities(
         user.id,
         selectedTarget: _tempTarget,
@@ -1134,7 +1191,6 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
 
-    // Обновляем основные переменные
     setState(() {
       selectedGender = _tempGender;
       selectedAge = _tempAge;
@@ -1146,12 +1202,13 @@ class _ProfilePageState extends State<ProfilePage> {
       selectedActivityLevel = _tempActivityLevel;
     });
 
-    // Показываем сообщение об успешном сохранении
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Данные успешно сохранены'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Данные успешно сохранены'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 }

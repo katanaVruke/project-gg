@@ -30,7 +30,9 @@ class _TargetPageState extends State<TargetPage> {
   Future<void> _saveTarget() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('selectedTarget', selectedTarget!);
-    Navigator.pop(context, selectedTarget);
+    if (mounted) {
+      Navigator.pop(context, selectedTarget);
+    }
   }
 
   @override

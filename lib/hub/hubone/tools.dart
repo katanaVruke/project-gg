@@ -158,7 +158,6 @@ class _ToolsPageState extends State<ToolsPage> {
             size: _calculateFontSize(isSmallScreen ? 20 : 24, context),
           ),
           onPressed: () {
-            // Сохраняем изменения перед возвратом
             _saveSelectedEquipment();
             Navigator.pop(context, _selectedEquipment.toList());
           },
@@ -314,7 +313,6 @@ class _ToolsPageState extends State<ToolsPage> {
                     alignment: Alignment.center,
                     child: ElevatedButton(
                       onPressed: () {
-                        // Сохраняем изменения перед возвратом
                         _saveSelectedEquipment();
                         Navigator.pop(context, _selectedEquipment.toList());
                       },

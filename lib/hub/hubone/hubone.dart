@@ -1,13 +1,13 @@
 // lib/hub/hubone/hubone.dart
+import 'package:Elite_KA/Hub/HubOne/Policy.dart';
+import 'package:Elite_KA/Hub/HubOne/ProfilePage.dart';
+import 'package:Elite_KA/splash_screen.dart';
+import 'package:Elite_KA/supabase/supabase_helper.dart';
+import 'package:Elite_KA/supabase/supabase_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'ProfilePage.dart';
-import 'Policy.dart';
-import 'package:Elite_KA/splash_screen.dart';
-import '../../supabase/supabase_service.dart';
-import '../../supabase/supabase_helper.dart';
 
 class HubOne extends StatefulWidget {
   const HubOne({super.key});
@@ -70,7 +70,6 @@ class _HubOneState extends State<HubOne> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Отображение текущей почты
               if (_userEmail != null) ...[
                 Container(
                   decoration: BoxDecoration(
@@ -164,7 +163,7 @@ class _HubOneState extends State<HubOne> {
                   ],
                 ),
               ),
-              SizedBox(height: heightValue * 0.75), // Одинаковый отступ
+              SizedBox(height: heightValue * 0.75),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.grey[900],
@@ -306,26 +305,28 @@ class _HubOneState extends State<HubOne> {
         mode: LaunchMode.externalApplication,
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: Colors.grey[900]!,
-          content: Center(
-            child: Text(
-              'Не удалось открыть',
-              style: TextStyle(
-                color: Colors.red,
-                fontSize: 14.0,
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: Colors.grey[900]!,
+            content: Center(
+              child: Text(
+                'Не удалось открыть',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 14.0,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            duration: const Duration(seconds: 2),
           ),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+        );
+      }
     }
   }
 
@@ -484,38 +485,40 @@ class _HubOneState extends State<HubOne> {
 
   Future<void> _deleteAllUserData() async {
     try {
-      // Очищаем данные в Supabase
       final user = SupabaseHelper.client.auth.currentUser;
       if (user != null) {
         await SupabaseService.clearUserProfileData(user.id);
-        // Удаляем также цели и активности
         await SupabaseService.clearUserGoalsAndActivities(user.id);
       }
 
-      // Очищаем shared_preferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-
-      // Перенаправляем на экран авторизации
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const SplashScreen()),
-            (Route<dynamic> route) => false,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Данные успешно удалены'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const SplashScreen()),
+              (Route<dynamic> route) => false,
+        );
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Данные успешно удалены'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
-      print('Error deleting user  $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ошибка при удалении данных'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (kDebugMode) {
+        print('Ошибка удаления $e');
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка при удалении данных'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -523,25 +526,26 @@ class _HubOneState extends State<HubOne> {
     try {
       await SupabaseHelper.client.auth.signOut();
 
-      // Очищаем локальные данные
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-
-      // Перенаправляем на экран авторизации
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const SplashScreen()),
-            (Route<dynamic> route) => false,
-      );
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const SplashScreen()),
+              (Route<dynamic> route) => false,
+        );
+      }
     } catch (e) {
       if (kDebugMode) {
-        print('Error signing out: $e');
+        print('Ошибка выхода: $e');
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ошибка при выходе'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка при выходе'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }
