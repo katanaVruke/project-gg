@@ -38,7 +38,6 @@ class ExerciseService {
     await _saveCustomExercisesToPrefs(custom);
   }
   static Future<void> removeCustomExercise(String id, String? imagePath) async {
-    // Удаляем из SharedPreferences
     final custom = await _loadCustomExercises();
     custom.removeWhere((e) => e.id == id);
     await _saveCustomExercisesToPrefs(custom);
