@@ -1,6 +1,7 @@
 // lib/hub/hubone/hubone.dart
 import 'package:Elite_KA/Hub/HubOne/Policy.dart';
 import 'package:Elite_KA/Hub/HubOne/ProfilePage.dart';
+import 'package:Elite_KA/hub/hubthree/services/exercise_service.dart';
 import 'package:Elite_KA/splash_screen.dart';
 import 'package:Elite_KA/supabase/supabase_helper.dart';
 import 'package:Elite_KA/supabase/supabase_service.dart';
@@ -492,6 +493,7 @@ class _HubOneState extends State<HubOne> {
         await SupabaseService.clearUserIngredients(user.id);
         await SupabaseService.clearUserDishes(user.id);
         await SupabaseService.clearEatenDishesForUser(user.id);
+        await ExerciseService.clearCustomExercises();
       }
 
       final prefs = await SharedPreferences.getInstance();

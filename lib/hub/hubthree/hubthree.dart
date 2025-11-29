@@ -1,13 +1,12 @@
-// lib/hub/hubthree/hubthree.dart
-import 'dart:io';
+//lib/hub/hubthree/hubthree.dart
+import 'package:Elite_KA/Hub/HubThree/pages/ExerciseDetailPage.dart';
+import 'package:Elite_KA/Hub/HubThree/widgets/FilterBottomSheet.dart';
+import 'package:Elite_KA/Hub/HubThree/widgets/NewExercisePage.dart';
+import 'package:Elite_KA/Hub/HubThree/widgets/SearchBottomSheet.dart';
+import 'package:Elite_KA/hub/hubthree/services/exercise_service.dart';
 import 'package:Elite_KA/hub/hubThree/data/initial_exercises.dart' as initialData;
 import 'package:Elite_KA/hub/hubtwo/models/exercise.dart';
 import 'package:flutter/material.dart';
-import '../../hub/hubthree/services/exercise_service.dart';
-import 'widgets/SearchBottomSheet.dart';
-import 'widgets/FilterBottomSheet.dart';
-import 'widgets/NewExercisePage.dart';
-import './pages/ExerciseDetailPage.dart';
 
 class HubThree extends StatefulWidget {
   const HubThree({super.key});
@@ -20,6 +19,7 @@ class _HubThreeState extends State<HubThree> {
   String _selectedBodyPart = 'Всё тело';
   List<Exercise> _allExercises = [];
   List<Exercise> _filteredExercises = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -28,11 +28,15 @@ class _HubThreeState extends State<HubThree> {
   }
 
   Future<void> _loadExercises() async {
+    setState(() {
+      _isLoading = true;
+    });
     final exercises = await ExerciseService.getAllExercises(initialData.getBaseExercises());
     if (mounted) {
       setState(() {
         _allExercises = exercises;
         _applyFilter();
+        _isLoading = false;
       });
     }
   }
@@ -91,30 +95,6 @@ class _HubThreeState extends State<HubThree> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: Colors.white, size: iconSize),
-            onPressed: () async {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    backgroundColor: Colors.grey[900],
-                    content: Center(
-                      child: Text(
-                        'Данные синхронизированы',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              }
-              await _loadExercises();
-            },
-          ),
-          IconButton(
             icon: Icon(Icons.search, color: Colors.white, size: iconSize),
             onPressed: () {
               showModalBottomSheet(
@@ -172,7 +152,9 @@ class _HubThreeState extends State<HubThree> {
               ),
             ),
             Expanded(
-              child: _filteredExercises.isEmpty
+              child: _isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : _filteredExercises.isEmpty
                   ? Center(
                 child: Text(
                   'Нет упражнений',
@@ -251,7 +233,6 @@ class _HubThreeState extends State<HubThree> {
                           );
                         },
                       );
-
                       if (confirmed == true) {
                         await ExerciseService.removeCustomExercise(exercise.id, exercise.image);
                         await _loadExercises();
@@ -289,8 +270,9 @@ class _HubThreeState extends State<HubThree> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(10),
-                              child: Image.file(
-                                File(exercise.image),
+                              child: exercise.image.isNotEmpty
+                                  ? Image.network(
+                                exercise.image,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
@@ -303,6 +285,15 @@ class _HubThreeState extends State<HubThree> {
                                     ),
                                   );
                                 },
+                              )
+                                  : Container(
+                                color: Colors.grey[800],
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  Icons.fitness_center,
+                                  size: isSmallScreen ? 28 : 32,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                             if (exercise.isCustom)
@@ -371,7 +362,6 @@ class _HubThreeState extends State<HubThree> {
               MaterialPageRoute(builder: (context) => const NewExercisePage()),
             );
             if (newExercise is Exercise) {
-              await ExerciseService.addCustomExercise(newExercise);
               await _loadExercises();
             }
           },

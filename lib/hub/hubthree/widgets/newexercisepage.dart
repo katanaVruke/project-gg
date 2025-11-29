@@ -1,4 +1,4 @@
-// lib/hub/hubthree/widgets/newexercisepage.dart
+//lib/hub/hubthree/widgets/newexercisepage.dart
 import 'dart:io';
 import 'package:Elite_KA/hub/hubthree/services/exercise_service.dart';
 import 'package:Elite_KA/hub/hubtwo/models/exercise.dart';
@@ -22,10 +22,15 @@ class _NewExercisePageState extends State<NewExercisePage> {
   String? _imagePath;
 
   static const _bodyParts = [
-    'Всё тело', 'Грудь', 'Мышечный каркас', 'Ноги',
-    'Плечи', 'Руки', 'Спина', 'Ягодичные'
+    'Всё тело',
+    'Грудь',
+    'Мышечный каркас',
+    'Ноги',
+    'Плечи',
+    'Руки',
+    'Спина',
+    'Ягодичные'
   ];
-
   static const _equipments = [
     'Нет',
     'Вес тела',
@@ -299,9 +304,31 @@ class _NewExercisePageState extends State<NewExercisePage> {
                                 bodyPart: _bodyPart,
                                 isCustom: true,
                               );
-                              await ExerciseService.addCustomExercise(newExercise);
-                              await Future.delayed(const Duration(milliseconds: 100));
-                              Navigator.pop(context, newExercise);
+                              try {
+                                await ExerciseService.addCustomExercise(newExercise);
+                                if (context.mounted) {
+                                  Navigator.pop(context, newExercise);
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: Colors.grey[900],
+                                      content: Center(
+                                        child: Text(
+                                          'Ошибка при сохранении упражнения',
+                                          style: TextStyle(color: Colors.red),
+                                        ),
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      duration: const Duration(seconds: 2),
+                                    ),
+                                  );
+                                }
+                              }
                             }
                           },
                           style: ElevatedButton.styleFrom(
