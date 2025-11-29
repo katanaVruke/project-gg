@@ -24,6 +24,7 @@ class _WorkoutEditScreenState extends State<WorkoutEditScreen> {
 
   void _editWorkoutName() {
     final controller = TextEditingController(text: _workout.name);
+
     showDialog(
       context: context,
       builder: (context) {
@@ -70,11 +71,9 @@ class _WorkoutEditScreenState extends State<WorkoutEditScreen> {
         builder: (context) => ExercisePickerScreen(selectedExercises: currentExercises),
       ),
     );
-
     if (selected != null) {
       final existingIds = currentExercises.map((e) => e.id).toSet();
       final newExercises = selected.where((e) => !existingIds.contains(e.id)).toList();
-
       if (newExercises.isNotEmpty) {
         setState(() {
           _workout = _workout.copyWith(
@@ -138,12 +137,14 @@ class _WorkoutEditScreenState extends State<WorkoutEditScreen> {
                   style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),
+
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 80.0), // оставим место для кнопок
+                    padding: const EdgeInsets.only(bottom: 80.0),
                     itemCount: _workout.exercises.length,
                     itemBuilder: (context, index) {
                       final ex = _workout.exercises[index];
+
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(12),
@@ -156,10 +157,26 @@ class _WorkoutEditScreenState extends State<WorkoutEditScreen> {
                           children: [
                             Row(
                               children: [
-                                CircleAvatar(
-                                  radius: 24,
-                                  backgroundImage: NetworkImage(ex.imageUrl),
-                                  backgroundColor: Colors.grey[800],
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(24),
+                                  child: Image.network(
+                                    ex.imageUrl,
+                                    width: 48,
+                                    height: 48,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 48,
+                                        height: 48,
+                                        color: Colors.grey[800],
+                                        alignment: Alignment.center,
+                                        child: Icon(
+                                          Icons.fitness_center,
+                                          color: Colors.grey,
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -201,6 +218,7 @@ class _WorkoutEditScreenState extends State<WorkoutEditScreen> {
                     },
                   ),
                 ),
+
                 Padding(
                   padding: EdgeInsets.only(bottom: bottomPadding),
                   child: Row(

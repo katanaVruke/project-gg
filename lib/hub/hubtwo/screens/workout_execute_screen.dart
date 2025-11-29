@@ -136,6 +136,7 @@ class _WorkoutExecuteScreenState extends State<WorkoutExecuteScreen> {
             itemCount: _workout.exercises.length,
             itemBuilder: (context, exIndex) {
               final exercise = _workout.exercises[exIndex];
+
               return Container(
                 margin: EdgeInsets.only(bottom: 16),
                 padding: containerPadding,
@@ -148,10 +149,27 @@ class _WorkoutExecuteScreenState extends State<WorkoutExecuteScreen> {
                   children: [
                     Row(
                       children: [
-                        CircleAvatar(
-                          backgroundImage: NetworkImage(exercise.imageUrl),
-                          backgroundColor: Colors.grey[800],
-                          radius: isSmallScreen ? 20 : 24,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 24),
+                          child: Image.network(
+                            exercise.imageUrl,
+                            width: isSmallScreen ? 40 : 48,
+                            height: isSmallScreen ? 40 : 48,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: isSmallScreen ? 40 : 48,
+                                height: isSmallScreen ? 40 : 48,
+                                color: Colors.grey[800],
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  Icons.fitness_center,
+                                  color: Colors.grey,
+                                  size: isSmallScreen ? 20 : 24,
+                                ),
+                              );
+                            },
+                          ),
                         ),
                         SizedBox(width: 12),
                         Flexible(
@@ -174,10 +192,8 @@ class _WorkoutExecuteScreenState extends State<WorkoutExecuteScreen> {
                       final setIndex = exercise.sets.indexOf(set);
                       return _buildSetRow(
                         set: set,
-                        onWeightChanged: (val) =>
-                            _updateSet(exIndex, setIndex, weight: val, reps: set.reps),
-                        onRepsChanged: (val) =>
-                            _updateSet(exIndex, setIndex, weight: set.weight, reps: val),
+                        onWeightChanged: (val) => _updateSet(exIndex, setIndex, weight: val, reps: set.reps),
+                        onRepsChanged: (val) => _updateSet(exIndex, setIndex, weight: set.weight, reps: val),
                         onToggleCompleted: () => _toggleSetCompleted(exIndex, setIndex),
                         isSmallScreen: isSmallScreen,
                         textFieldFontSize: textFieldFontSize,
@@ -314,6 +330,7 @@ class _WorkoutExecuteScreenState extends State<WorkoutExecuteScreen> {
     final hours = seconds ~/ 3600;
     final minutes = (seconds % 3600) ~/ 60;
     final secs = seconds % 60;
+
     if (hours > 0) {
       return '$hoursч $minutesм';
     } else {

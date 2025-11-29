@@ -7,7 +7,6 @@ import 'package:Elite_KA/hub/hubtwo/models/workout.dart';
 
 class ExercisePickerScreen extends StatefulWidget {
   final List<WorkoutExercise> selectedExercises;
-
   const ExercisePickerScreen({super.key, required this.selectedExercises});
 
   @override
@@ -33,12 +32,10 @@ class _ExercisePickerScreenState extends State<ExercisePickerScreen> {
     final selectedIds = {
       for (var ex in widget.selectedExercises) ex.id,
     };
-
     final initialSetCounts = <String, int>{};
     for (var ex in widget.selectedExercises) {
       initialSetCounts[ex.id] = ex.setCount ?? 3;
     }
-
     if (mounted) {
       setState(() {
         _allExercises = exercises;
@@ -209,7 +206,6 @@ class _ExerciseItemState extends State<ExerciseItem> with AutomaticKeepAliveClie
   @override
   Widget build(BuildContext context) {
     super.build(context);
-
     return Card(
       color: Colors.grey[900],
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -218,7 +214,23 @@ class _ExerciseItemState extends State<ExerciseItem> with AutomaticKeepAliveClie
         child: Row(
           children: [
             CircleAvatar(
-              backgroundImage: NetworkImage(widget.exercise.image),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(30),
+                child: Image.network(
+                  widget.exercise.image,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.grey[800],
+                      alignment: Alignment.center,
+                      child: Icon(
+                        Icons.fitness_center,
+                        color: Colors.grey,
+                      ),
+                    );
+                  },
+                ),
+              ),
               backgroundColor: Colors.grey[800],
             ),
             const SizedBox(width: 12),

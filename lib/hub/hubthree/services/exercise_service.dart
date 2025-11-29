@@ -248,4 +248,5 @@ class ExerciseService {
       isCustom: row['is_custom'] as bool? ?? true,
     );
   }
+
 }

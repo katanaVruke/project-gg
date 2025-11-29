@@ -89,7 +89,6 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
               ),
               SizedBox(height: verticalSpacing),
 
-              // Статистика
               _buildStatCard(
                 title: 'Объем',
                 value: '$totalVolume кг',
@@ -100,7 +99,6 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
                 isSmallScreen: isSmallScreen,
               ),
               SizedBox(height: smallSpacing),
-
               _buildStatCard(
                 title: 'Длительность',
                 value: formattedDuration,
@@ -111,7 +109,6 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
                 isSmallScreen: isSmallScreen,
               ),
               SizedBox(height: smallSpacing),
-
               _buildStatCard(
                 title: 'Начало',
                 value: formattedStartTime,
@@ -133,7 +130,6 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
               ),
               SizedBox(height: smallSpacing),
 
-              // Список упражнений
               Expanded(
                 child: ListView.builder(
                   itemCount: widget.workout.exercises.length,
@@ -141,6 +137,7 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
                     final ex = widget.workout.exercises[index];
                     final completedSets = ex.completedSets;
                     final totalSets = ex.totalSets;
+
                     return Container(
                       margin: EdgeInsets.only(bottom: 12),
                       padding: exerciseCardPadding,
@@ -150,10 +147,27 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
                       ),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            backgroundImage: NetworkImage(ex.imageUrl),
-                            backgroundColor: Colors.grey[800],
-                            radius: isSmallScreen ? 20 : 24,
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(isSmallScreen ? 20 : 24),
+                            child: Image.network(
+                              ex.imageUrl,
+                              width: isSmallScreen ? 40 : 48,
+                              height: isSmallScreen ? 40 : 48,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: isSmallScreen ? 40 : 48,
+                                  height: isSmallScreen ? 40 : 48,
+                                  color: Colors.grey[800],
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.fitness_center,
+                                    color: Colors.grey,
+                                    size: isSmallScreen ? 20 : 24,
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                           SizedBox(width: isSmallScreen ? 12 : 16),
                           Expanded(
@@ -196,7 +210,6 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
 
               SizedBox(height: verticalSpacing),
 
-              // Кнопка «НА ГЛАВНУЮ»
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).popUntil((route) => route.isFirst);
@@ -284,6 +297,7 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
     final seconds = duration.inSeconds % 60;
+
     if (hours > 0) {
       return '$hoursч $minutesм';
     } else {
@@ -297,6 +311,7 @@ class _WorkoutCompleteScreenState extends State<WorkoutCompleteScreen> {
     final year = dateTime.year;
     final hours = dateTime.hour.toString().padLeft(2, '0');
     final minutes = dateTime.minute.toString().padLeft(2, '0');
+
     return '$day.$month.$year в $hours:$minutes';
   }
 }
