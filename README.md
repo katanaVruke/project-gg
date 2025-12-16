@@ -1,16 +1,40 @@
-# project_gg
+# CI/CD Pipeline Documentation
 
-Разработка мобильного приложения для эффективных тренировок в зале с функциями планирования, таймера и отслеживания прогресса
+## Pipeline Overview
 
-## Getting Started
+This project uses GitHub Actions for Continuous Integration and Continuous Deployment.
 
-This project is a starting point for a Flutter application.
+### Workflows
 
-A few resources to get you started if this is your first Flutter project:
+1. **Main CI/CD Pipeline** (`.github/workflows/flutter-ci.yml`)
+   - Lint and analyze code
+   - Run tests
+   - Build Android APK/AAB
+   - Deploy to server
+   - Send Discord notifications
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+2. **Release Pipeline** (`.github/workflows/release.yml`)
+   - Automatically create GitHub releases on tag push
+   - Generate release notes from commit history
+   - Attach APK files to release
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| FLUTTER_VERSION | Flutter SDK version | 3.13.9 |
+| PROJECT_NAME | Project name | Project-GG |
+
+### Secrets Required
+
+- `DISCORD_WEBHOOK_URL`: For notifications
+- `SSH_PRIVATE_KEY`: For deployment
+- `DEPLOY_HOST`: Deployment server host
+- `DEPLOY_USER`: Deployment server user
+- `DEPLOY_PATH`: Deployment path
+
+### How to Use
+
+1. **Push to main branch**: Triggers full CI/CD pipeline
+2. **Push a tag (v*.*.*)**: Creates GitHub release
+3. **Create pull request**: Runs lint and tests
