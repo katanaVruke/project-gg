@@ -1,12 +1,12 @@
 // lib/registration/step2.dart
 import 'package:flutter/material.dart';
 
-class Step2 extends StatefulWidget {
+class step2 extends StatefulWidget {
   final int? selectedAge;
   final void Function(int) onAgeSelected;
   final void Function() onGoBack;
 
-  const Step2({
+  const step2({
     super.key,
     required this.selectedAge,
     required this.onAgeSelected,

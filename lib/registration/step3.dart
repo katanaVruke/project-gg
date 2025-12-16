@@ -1,12 +1,12 @@
 // lib/registration/step3.dart
 import 'package:flutter/material.dart';
 
-class Step3 extends StatefulWidget {
+class step3 extends StatefulWidget {
   final double? selectedHeight;
   final void Function(double) onHeightSelected;
   final void Function() onGoBack;
 
-  const Step3({
+  const step3({
     super.key,
     required this.selectedHeight,
     required this.onHeightSelected,
@@ -14,10 +14,10 @@ class Step3 extends StatefulWidget {
   });
 
   @override
-  State<Step3> createState() => _Step3State();
+  State<step3> createState() => _Step3State();
 }
 
-class _Step3State extends State<Step3> {
+class _Step3State extends State<step3> {
   late double _heightValue;
   late FixedExtentScrollController _wholePartController;
   late FixedExtentScrollController _decimalPartController;

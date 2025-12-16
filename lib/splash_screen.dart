@@ -1,5 +1,5 @@
 // lib/splash_screen.dart
-import 'package:Elite_KA/Hub/HubMain.dart';
+import 'package:Elite_KA/hub/hubMain.dart';
 import 'package:Elite_KA/registration/auth_screen.dart';
 import 'package:Elite_KA/registration/registration.dart';
 import 'package:Elite_KA/supabase/supabase_helper.dart';

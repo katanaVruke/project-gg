@@ -1,11 +1,11 @@
 // lib/steps/step1.dart
 import 'package:flutter/material.dart';
 
-class Step1 extends StatelessWidget {
+class step1 extends StatelessWidget {
   final String? selectedGender;
   final void Function(String) onGenderSelected;
 
-  const Step1({
+  const step1({
     super.key,
     required this.selectedGender,
     required this.onGenderSelected,

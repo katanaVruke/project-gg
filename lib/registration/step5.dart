@@ -1,13 +1,13 @@
 // lib/registration/step5.dart
 import 'package:flutter/material.dart';
 
-class Step5 extends StatefulWidget {
+class step5 extends StatefulWidget {
   final String? selectedGender;
   final String? initialFatPercentage;
   final void Function(String) onFatPercentageSelected;
   final void Function() onGoBack;
 
-  const Step5({
+  const step5({
     super.key,
     required this.selectedGender,
     this.initialFatPercentage,
@@ -16,10 +16,10 @@ class Step5 extends StatefulWidget {
   });
 
   @override
-  State<Step5> createState() => _Step5State();
+  State<step5> createState() => _Step5State();
 }
 
-class _Step5State extends State<Step5> {
+class _Step5State extends State<step5> {
   String? _selectedFatPercentage;
 
   final List<Map<String, dynamic>> maleImages = [

@@ -1,14 +1,14 @@
 // lib/registration/step4.dart
 import 'package:flutter/material.dart';
 
-class Step4 extends StatefulWidget {
+class step4 extends StatefulWidget {
   final String? selectedGender;
   final double? selectedHeight;
   final double? selectedWeight;
   final void Function(double) onWeightSelected;
   final void Function() onGoBack;
 
-  const Step4({
+  const step4({
     super.key,
     required this.selectedGender,
     required this.selectedHeight,
@@ -18,10 +18,10 @@ class Step4 extends StatefulWidget {
   });
 
   @override
-  State<Step4> createState() => _Step4State();
+  State<step4> createState() => _Step4State();
 }
 
-class _Step4State extends State<Step4> {
+class _Step4State extends State<step4> {
   late double _weightValue;
   late FixedExtentScrollController _wholePartController;
   late FixedExtentScrollController _decimalPartController;

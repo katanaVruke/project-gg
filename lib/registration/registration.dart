@@ -1,10 +1,10 @@
 // lib/registration/registration.dart
-import 'package:Elite_KA/registration/Step1.dart';
-import 'package:Elite_KA/registration/Step2.dart';
-import 'package:Elite_KA/registration/Step3.dart';
-import 'package:Elite_KA/registration/Step4.dart';
-import 'package:Elite_KA/registration/Step5.dart';
-import 'package:Elite_KA/registration/Step6.dart';
+import 'package:Elite_KA/registration/step1.dart';
+import 'package:Elite_KA/registration/step2.dart';
+import 'package:Elite_KA/registration/step3.dart';
+import 'package:Elite_KA/registration/step4.dart';
+import 'package:Elite_KA/registration/step5.dart';
+import 'package:Elite_KA/registration/step6.dart';
 import 'package:Elite_KA/supabase/supabase_helper.dart';
 import 'package:Elite_KA/supabase/supabase_service.dart';
 import 'package:flutter/material.dart';
@@ -71,7 +71,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   Widget _buildCurrentStep() {
     switch (_currentStep) {
       case 1:
-        return Step1(
+        return step1(
           selectedGender: selectedGender,
           onGenderSelected: (value) {
             setState(() {
@@ -81,7 +81,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           },
         );
       case 2:
-        return Step2(
+        return step2(
           selectedAge: selectedAge,
           onAgeSelected: (value) {
             setState(() {
@@ -96,7 +96,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           },
         );
       case 3:
-        return Step3(
+        return step3(
           selectedHeight: selectedHeight,
           onHeightSelected: (value) {
             setState(() {
@@ -111,7 +111,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           },
         );
       case 4:
-        return Step4(
+        return step4(
           selectedGender: selectedGender,
           selectedHeight: selectedHeight,
           selectedWeight: selectedWeight,
@@ -128,7 +128,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           },
         );
       case 5:
-        return Step5(
+        return step5(
           selectedGender: selectedGender,
           initialFatPercentage: selectedFatPercentage,
           onFatPercentageSelected: (value) {
@@ -144,7 +144,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           },
         );
       case 6:
-        return Step6(
+        return step6(
           initialEquipment: selectedEquipment,
           onEquipmentSelected: (List<String> values) async {
             setState(() {

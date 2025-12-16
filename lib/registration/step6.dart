@@ -5,12 +5,12 @@ import 'package:Elite_KA/supabase/supabase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class Step6 extends StatefulWidget {
+class step6 extends StatefulWidget {
   final void Function(List<String>) onEquipmentSelected;
   final void Function() onGoBack;
   final List<String>? initialEquipment;
 
-  const Step6({
+  const step6({
     super.key,
     required this.onEquipmentSelected,
     required this.onGoBack,
@@ -18,10 +18,10 @@ class Step6 extends StatefulWidget {
   });
 
   @override
-  State<Step6> createState() => _Step6State();
+  State<step6> createState() => _Step6State();
 }
 
-class _Step6State extends State<Step6> {
+class _Step6State extends State<step6> {
   final Set<String> _selectedCategories = <String>{};
   bool _isNoneSelected = false;
 
