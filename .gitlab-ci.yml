@@ -1,13 +1,9 @@
-# .gitlab-ci.yml - простейшая версия для проверки
-
 stages:
   - test
 
-test_pipeline:
+test_job:
   stage: test
   script:
-    - echo "✅ CI/CD пайплайн работает!"
-    - echo "Проект: $CI_PROJECT_NAME"
-    - echo "Ветка: $CI_COMMIT_REF_NAME"
+    - echo "CI/CD работает!"
   tags:
     - docker
