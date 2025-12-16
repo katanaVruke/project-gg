@@ -42,13 +42,24 @@ class _HubThreeState extends State<HubThree> {
   }
 
   void _applyFilter() {
+    List<Exercise> filtered;
     if (_selectedBodyPart == 'Всё тело') {
-      _filteredExercises = _allExercises;
+      filtered = _allExercises;
     } else {
-      _filteredExercises = _allExercises
+      filtered = _allExercises
           .where((e) => e.bodyPart == _selectedBodyPart)
           .toList();
     }
+
+    filtered.sort((a, b) {
+      if (a.isCustom && !b.isCustom) return -1;
+      if (!a.isCustom && b.isCustom) return 1;
+      return 0;
+    });
+
+    setState(() {
+      _filteredExercises = filtered;
+    });
   }
 
   void _onFilterChanged(String bodyPart) {
@@ -174,88 +185,92 @@ class _HubThreeState extends State<HubThree> {
                       padding: EdgeInsets.only(right: padding),
                       child: Icon(Icons.delete, color: Colors.white, size: iconSize),
                     ),
-                    onDismissed: (direction) async {
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (context) {
-                          final dialogPadding = isSmallScreen ? 12.0 : 16.0;
-                          final btnFontSize = isSmallScreen ? 14.0 : 16.0;
-                          return AlertDialog(
-                            backgroundColor: Colors.grey[900],
-                            title: Text(
-                              'Удалить упражнение?',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: isSmallScreen ? 16 : 18,
-                              ),
-                            ),
-                            content: Text(
-                              'Вы действительно хотите удалить «${exercise.name}»?',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                            contentPadding:
-                            EdgeInsets.symmetric(horizontal: dialogPadding, vertical: dialogPadding / 2),
-                            actionsPadding: EdgeInsets.all(dialogPadding / 2),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: Text(
-                                  'ОТМЕНА',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: btnFontSize,
-                                  ),
-                                ),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: dialogPadding,
-                                    vertical: dialogPadding / 2,
-                                  ),
-                                ),
-                                child: Text(
-                                  'УДАЛИТЬ',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: btnFontSize,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                      if (confirmed == true) {
-                        await ExerciseService.removeCustomExercise(exercise.id, exercise.image);
-                        await _loadExercises();
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
+                    confirmDismiss: (direction) async {
+                      if (direction == DismissDirection.endToStart) {
+                        final confirmed = await showDialog<bool>(
+                          context: context,
+                          builder: (context) {
+                            final dialogPadding = isSmallScreen ? 12.0 : 16.0;
+                            final btnFontSize = isSmallScreen ? 14.0 : 16.0;
+                            return AlertDialog(
                               backgroundColor: Colors.grey[900],
-                              content: Center(
-                                child: Text(
-                                  'Упражнение удалено',
-                                  style: TextStyle(
-                                      color: Colors.red, fontSize: 14),
+                              title: Text(
+                                'Удалить упражнение?',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: isSmallScreen ? 16 : 18,
                                 ),
                               ),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
+                              content: Text(
+                                'Вы действительно хотите удалить «${exercise.name}»?',
+                                style: TextStyle(color: Colors.grey),
                               ),
-                              duration: const Duration(seconds: 2),
-                            ),
-                          );
+                              contentPadding:
+                              EdgeInsets.symmetric(horizontal: dialogPadding, vertical: dialogPadding / 2),
+                              actionsPadding: EdgeInsets.all(dialogPadding / 2),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: Text(
+                                    'ОТМЕНА',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: btnFontSize,
+                                    ),
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: dialogPadding,
+                                      vertical: dialogPadding / 2,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'УДАЛИТЬ',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: btnFontSize,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        if (confirmed == true) {
+                          await ExerciseService.removeCustomExercise(exercise.id, exercise.image);
+                          await _loadExercises();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: Colors.grey[900],
+                                content: Center(
+                                  child: Text(
+                                    'Упражнение удалено',
+                                    style: TextStyle(
+                                        color: Colors.red, fontSize: 14),
+                                  ),
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
                         }
+                        return confirmed ?? false;
                       }
+                      return false;
                     },
                     child: ListTile(
                       contentPadding: EdgeInsets.symmetric(

@@ -105,14 +105,16 @@ class _WorkoutEditScreenState extends State<WorkoutEditScreen> {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom + 16.0;
 
-    return WillPopScope(
-      onWillPop: () async {
-        if (_workout != widget.workout) {
-          Navigator.pop(context, _workout);
-        } else {
-          Navigator.pop(context);
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          if (_workout != widget.workout) {
+            Navigator.pop(context, _workout);
+          } else {
+            Navigator.pop(context);
+          }
         }
-        return false;
       },
       child: Scaffold(
         backgroundColor: Colors.black,

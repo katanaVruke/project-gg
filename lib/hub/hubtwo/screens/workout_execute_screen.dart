@@ -136,8 +136,8 @@ class _WorkoutExecuteScreenState extends State<WorkoutExecuteScreen> {
             itemCount: _workout.exercises.length,
             itemBuilder: (context, exIndex) {
               final exercise = _workout.exercises[exIndex];
-
               return Container(
+                key: ValueKey(exercise.id),
                 margin: EdgeInsets.only(bottom: 16),
                 padding: containerPadding,
                 decoration: BoxDecoration(
@@ -188,13 +188,13 @@ class _WorkoutExecuteScreenState extends State<WorkoutExecuteScreen> {
                       ],
                     ),
                     SizedBox(height: isSmallScreen ? 10 : 12),
-                    ...exercise.sets.map((set) {
-                      final setIndex = exercise.sets.indexOf(set);
+                    ...exercise.sets.asMap().entries.map((entry) {
+                      final setIndex = entry.key;
+                      final set = entry.value;
                       return _buildSetRow(
                         set: set,
-                        onWeightChanged: (val) => _updateSet(exIndex, setIndex, weight: val, reps: set.reps),
-                        onRepsChanged: (val) => _updateSet(exIndex, setIndex, weight: set.weight, reps: val),
-                        onToggleCompleted: () => _toggleSetCompleted(exIndex, setIndex),
+                        setIndex: setIndex,
+                        exIndex: exIndex,
                         isSmallScreen: isSmallScreen,
                         textFieldFontSize: textFieldFontSize,
                       );
@@ -232,9 +232,8 @@ class _WorkoutExecuteScreenState extends State<WorkoutExecuteScreen> {
 
   Widget _buildSetRow({
     required WorkoutSet set,
-    required Function(int) onWeightChanged,
-    required Function(int) onRepsChanged,
-    required VoidCallback onToggleCompleted,
+    required int setIndex,
+    required int exIndex,
     required bool isSmallScreen,
     required double textFieldFontSize,
   }) {
@@ -256,7 +255,7 @@ class _WorkoutExecuteScreenState extends State<WorkoutExecuteScreen> {
                 SizedBox(width: isSmallScreen ? 8 : 10),
                 _buildNumberInput(
                   value: set.weight,
-                  onChanged: onWeightChanged,
+                  onChanged: (val) => _updateSet(exIndex, setIndex, weight: val, reps: set.reps),
                   suffix: 'кг',
                   isSmallScreen: isSmallScreen,
                   fontSize: textFieldFontSize,
@@ -264,7 +263,7 @@ class _WorkoutExecuteScreenState extends State<WorkoutExecuteScreen> {
                 SizedBox(width: isSmallScreen ? 8 : 10),
                 _buildNumberInput(
                   value: set.reps,
-                  onChanged: onRepsChanged,
+                  onChanged: (val) => _updateSet(exIndex, setIndex, weight: set.weight, reps: val),
                   suffix: 'повт.',
                   isSmallScreen: isSmallScreen,
                   fontSize: textFieldFontSize,
@@ -274,7 +273,7 @@ class _WorkoutExecuteScreenState extends State<WorkoutExecuteScreen> {
           ),
           Checkbox(
             value: set.isCompleted,
-            onChanged: (value) => onToggleCompleted(),
+            onChanged: (value) => _toggleSetCompleted(exIndex, setIndex),
             activeColor: Colors.red,
             checkColor: Colors.white,
             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -316,15 +315,20 @@ class _WorkoutExecuteScreenState extends State<WorkoutExecuteScreen> {
           ),
         ),
         inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'^\d+')),
+          FilteringTextInputFormatter.allow(RegExp(r'^\d*')),
         ],
+        controller: TextEditingController(text: value.toString())..selection = TextSelection.fromPosition(TextPosition(offset: value.toString().length)),
         onChanged: (text) {
-          final num = int.tryParse(text) ?? 0;
-          onChanged(num);
+          final num = int.tryParse(text);
+          if (num != null) {
+            onChanged(num);
+          } else if (text.isEmpty) {
+          }
         },
       ),
     );
   }
+
 
   String _formatDuration(int seconds) {
     final hours = seconds ~/ 3600;

@@ -214,6 +214,7 @@ class _ExerciseItemState extends State<ExerciseItem> with AutomaticKeepAliveClie
         child: Row(
           children: [
             CircleAvatar(
+              backgroundColor: Colors.grey[800],
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(30),
                 child: Image.network(
@@ -231,7 +232,6 @@ class _ExerciseItemState extends State<ExerciseItem> with AutomaticKeepAliveClie
                   },
                 ),
               ),
-              backgroundColor: Colors.grey[800],
             ),
             const SizedBox(width: 12),
             Expanded(

@@ -22,6 +22,12 @@ class _HubTwoState extends State<HubTwo> {
     _loadWorkouts();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadWorkouts();
+  }
+
   Future<void> _loadWorkouts() async {
     setState(() {
       _isLoading = true;
@@ -47,10 +53,12 @@ class _HubTwoState extends State<HubTwo> {
     final createdWorkout = await Navigator.push<Workout>(
       context,
       MaterialPageRoute(
-        builder: (context) => WorkoutCreateScreen(onWorkoutCreated: (workout) {  },),
+        builder: (context) => WorkoutCreateScreen(
+          onWorkoutCreated: (workout) {
+          },
+        ),
       ),
     );
-
     if (createdWorkout != null) {
       final updatedWorkouts = [..._workouts, createdWorkout];
       await WorkoutStorageService.saveWorkouts(updatedWorkouts);
@@ -132,13 +140,11 @@ class _HubTwoState extends State<HubTwo> {
         ],
       ),
     );
-
     if (confirm == true) {
-      final updatedWorkouts = _workouts.where((w) => w.id != workout.id).toList();
-      await WorkoutStorageService.saveWorkouts(updatedWorkouts);
+      await WorkoutStorageService.deleteWorkout(workout.id);
       if (mounted) {
         setState(() {
-          _workouts = updatedWorkouts;
+          _workouts.removeWhere((w) => w.id == workout.id);
         });
       }
     }

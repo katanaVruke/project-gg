@@ -2,6 +2,8 @@
 import 'package:Elite_KA/Hub/HubOne/Policy.dart';
 import 'package:Elite_KA/Hub/HubOne/ProfilePage.dart';
 import 'package:Elite_KA/hub/hubthree/services/exercise_service.dart';
+import 'package:Elite_KA/hub/hubtwo/services/workout_storage_service.dart';
+import 'package:Elite_KA/hub/hubtwo/services/completed_workout_storage_service.dart';
 import 'package:Elite_KA/splash_screen.dart';
 import 'package:Elite_KA/supabase/supabase_helper.dart';
 import 'package:Elite_KA/supabase/supabase_service.dart';
@@ -187,7 +189,7 @@ class _HubOneState extends State<HubOne> {
                       icon: Icons.telegram,
                       title: '@exp206',
                       onTap: () {
-                        _launchTelegram('https://t.me/exp206  ');
+                        _launchTelegram('https://t.me/exp206');
                       },
                       isSmallScreen: isSmallScreen,
                     ),
@@ -494,9 +496,13 @@ class _HubOneState extends State<HubOne> {
         await SupabaseService.clearUserDishes(user.id);
         await SupabaseService.clearEatenDishesForUser(user.id);
         await ExerciseService.clearCustomExercises();
+        await WorkoutStorageService.clearUserWorkouts(user.id);
+        await CompletedWorkoutStorageService.clearUserCompletedWorkouts(user.id);
       }
 
       final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('saved_workouts');
+      await prefs.remove('completed_workouts');
       await prefs.clear();
 
       await SupabaseHelper.client.auth.signOut();

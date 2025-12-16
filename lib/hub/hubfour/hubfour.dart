@@ -170,19 +170,13 @@ class _HubFourState extends State<HubFour> {
     setState(() => _isDeleting = true);
 
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final List<String> rawList = prefs.getStringList('completed_workouts') ??
-          [];
+      // Используем метод из сервиса для удаления тренировки
+      await CompletedWorkoutStorageService.deleteCompletedWorkout(workout.id);
 
-      final updatedList = rawList
-          .map((str) => jsonDecode(str) as Map<String, dynamic>)
-          .where((json) => json['id'] != workout.id)
-          .map((json) => jsonEncode(json))
-          .toList();
-
-      await prefs.setStringList('completed_workouts', updatedList);
-
-      await _loadWorkoutHistory();
+      // Обновляем локальный список, удаляя тренировку
+      setState(() {
+        _workoutHistory.removeWhere((w) => w.id == workout.id);
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

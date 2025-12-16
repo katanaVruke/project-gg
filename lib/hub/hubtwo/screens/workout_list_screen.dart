@@ -36,7 +36,6 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
         ),
       ),
     );
-
     if (createdWorkout != null) {
       final workouts = await WorkoutStorageService.loadWorkouts();
       workouts.add(createdWorkout);
@@ -46,9 +45,7 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
   }
 
   Future<void> _deleteWorkout(String id) async {
-    final workouts = await WorkoutStorageService.loadWorkouts();
-    workouts.removeWhere((w) => w.id == id);
-    await WorkoutStorageService.saveWorkouts(workouts);
+    await WorkoutStorageService.deleteWorkout(id);
     if (mounted) setState(() {});
   }
 
@@ -72,6 +69,7 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: Colors.red));
           }
+
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(
               child: Text(
