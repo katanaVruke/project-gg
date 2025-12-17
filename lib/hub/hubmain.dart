@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:collection/collection.dart';
 
-class hubmain extends StatefulWidget {
+class HubMain extends StatefulWidget {
   const hubmain({super.key});
 
   @override
@@ -31,7 +31,7 @@ class _HubMainState extends State<hubmain> {
   final List<Widget> _pages = [
     const HubOne(),
     const HubTwo(),
-    const HubThree(),
+  //  const HubThree(),
     const HubFour(),
     const HubFive(),
     const Achievements(),
