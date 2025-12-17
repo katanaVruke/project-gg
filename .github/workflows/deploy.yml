@@ -1,7 +1,7 @@
 name: Deploy to Server
 on:
   workflow_run:
-    workflows: ["Build and Test"] # Название workflow из build.yml
+    workflows: ["Build and Test"]
     types:
       - completed
     branches: [main]
@@ -10,23 +10,23 @@ jobs:
   deploy:
     name: Deploy APK to Server
     runs-on: self-hosted
-    # --- ВАЖНОЕ ДОБАВЛЕНИЕ: Environment ---
+    # --- Environment для отслеживания деплоев ---
     environment:
       name: production
       url: http://192.168.0.7:8080/
-    # --------------------------------------
+    # -------------------------------------------
     
-    # Запускаем деплой только если сборка УСПЕШНА
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Условие запуска: ТОЛЬКО успешные сборки из ветки main (не теги!)
+    if: |
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
     
     steps:
       - name: Download APK from build workflow
         uses: actions/download-artifact@v4
         with:
-          # Скачиваем артефакт из ВНЕШНЕГО workflow
           name: android-apk
           run-id: ${{ github.event.workflow_run.id }}
-          # Важно: GitHub требует токен для скачивания артефактов между workflow
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Rename APK with timestamp
@@ -39,7 +39,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          # Добавляем хост в known_hosts (с таймаутом)
+          # Добавляем хост в known_hosts
           ssh-keyscan -T 5 -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Copy APK to server via scp
@@ -57,6 +57,10 @@ jobs:
             rm -f latest.apk
             ln -s \"\$LATEST_APK\" latest.apk
             
+            # Получаем информацию о сборке
+            BUILD_DATE=\$(date '+%d.%m.%Y, %H:%M')
+            APK_SIZE=\$(du -h latest.apk | cut -f1)
+            
             # Создаём минималистичный HTML
             cat > index.html << 'HTML_EOF'
             <!DOCTYPE html>
@@ -64,7 +68,7 @@ jobs:
             <head>
                 <meta charset=\"UTF-8\">
                 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-                <title>${{ env.PROJECT_NAME }}</title>
+                <title>${{ github.event.workflow_run.head_repository.full_name }}</title>
                 <style>
                     body {
                         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -129,7 +133,7 @@ jobs:
                 <p class=\"subtitle\">Автоматические сборки Flutter приложения</p>
                 
                 <div class=\"info\">
-                    <p><strong>📅 Последняя сборка:</strong> <span id=\"build-date\">\$(date '+%d.%m.%Y, %H:%M')</span></p>
+                    <p><strong>📅 Последняя сборка:</strong> <span id=\"build-date\">\$BUILD_DATE</span></p>
                     <p><strong>🔧 Коммит:</strong> ${{ github.event.workflow_run.head_sha }}</p>
                     <p><strong>🌐 Воркфлоу:</strong> <a href=\"${{ github.event.workflow_run.html_url }}\" target=\"_blank\">#${{ github.event.workflow_run.id }}</a></p>
                 </div>
@@ -140,7 +144,7 @@ jobs:
                 <p>Всегда актуальная сборка</p>
                 
                 <a href=\"latest.apk\" class=\"download-btn\">СКАЧАТЬ APK</a>
-                <p class=\"size\">(~$(du -h latest.apk | cut -f1))</p>
+                <p class=\"size\">(~\$APK_SIZE)</p>
             </body>
             </html>
             HTML_EOF
