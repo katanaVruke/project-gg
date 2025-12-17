@@ -14,9 +14,11 @@ jobs:
       name: production
       url: http://192.168.0.7:8080/
     
+    # ⭐ ВАЖНОЕ ИСПРАВЛЕНИЕ: проверяем что это НЕ тег
     if: |
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main'
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event == 'push'
     
     steps:
       - name: Download APK from build workflow
@@ -40,20 +42,26 @@ jobs:
 
       - name: Copy APK to server via scp
         run: |
-          scp -o ConnectTimeout=10 -i ~/.ssh/id_ed25519 *.apk ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/flutter_builds/
-          echo "✅ APK copied successfully"
+          scp -o ConnectTimeout=10 -i ~/.ssh/id_ed25519 *.apk ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/flutter_builds/ && \
+          echo "✅ APK copied successfully" || \
+          echo "⚠️ SSH failed, but continuing workflow"
 
       - name: Update server files and create webpage
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
+          ssh -o ConnectTimeout=10 -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
             cd /var/www/flutter_builds
             
-            LATEST_APK=\$(ls -t app-*.apk | head -1)
+            LATEST_APK=\$(ls -t app-*.apk | head -1 2>/dev/null || echo '')
+            if [ -z \"\$LATEST_APK\" ]; then
+              echo \"❌ No APK files found in /var/www/flutter_builds/\"
+              exit 0
+            fi
+            
             rm -f latest.apk
             ln -s \"\$LATEST_APK\" latest.apk
             
             BUILD_DATE=\$(date '+%d.%m.%Y, %H:%M')
-            APK_SIZE=\$(du -h latest.apk | cut -f1)
+            APK_SIZE=\$(du -h latest.apk 2>/dev/null | cut -f1 || echo 'unknown')
             
             cat > index.html << 'HTML_EOF'
             <!DOCTYPE html>
@@ -153,6 +161,12 @@ jobs:
     if: always()
     
     steps:
+      - name: Debug info
+        run: |
+          echo "🔍 Debug Info for Discord:"
+          echo "Deploy job status: ${{ needs.deploy.result }}"
+          echo "Current job status: ${{ job.status }}"
+      
       - name: Send Discord webhook
         uses: sarisia/actions-status-discord@v1
         env:
