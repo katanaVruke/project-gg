@@ -151,7 +151,6 @@ jobs:
             echo \"🌐 Ссылка: http://${{ secrets.SSH_HOST }}:8080/\"
           "
 
-<<<<<<< HEAD
   notify:
     name: Discord Notification
     runs-on: ubuntu-latest
@@ -177,6 +176,4 @@ jobs:
         color: ${{ job.status == 'success' && '00ff00' || 'ff0000' }}
         username: "GitHub Actions"
         avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
-=======
-  
->>>>>>> 66430493cdc7e1b979a86ca6b24026a341676124
+
