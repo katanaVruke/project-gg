@@ -9,7 +9,7 @@ on:
   workflow_dispatch:  # Позволяет запускать вручную
 
 env:
-  FLUTTER_VERSION: '3.25.0'
+  FLUTTER_VERSION: '3.27.1'  # Изменено на версию, которая содержит Dart 3.9+
   PROJECT_NAME: 'Project-GG'
 
 jobs:
@@ -26,25 +26,39 @@ jobs:
       with:
         fetch-depth: 0
     
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: ${{ env.FLUTTER_VERSION }}
-        cache: true
-        cache-key: flutter-${{ env.FLUTTER_VERSION }}
+    # Исправление: Замена subosito/flutter-action на ручную установку
+    - name: Setup Flutter Manually
+      run: |
+        echo "Cloning Flutter repository for version ${{ env.FLUTTER_VERSION }}..."
+        git clone https://github.com/flutter/flutter.git --depth 1 --branch ${{ env.FLUTTER_VERSION }} $HOME/flutter
+        echo "$HOME/flutter/bin" >> $GITHUB_PATH
+        echo "Flutter cloned successfully."
+    
+    # Необходимо после установки
+    - name: Verify Installation
+      run: |
+        export PATH="$HOME/flutter/bin:$PATH"
+        echo "=== Flutter Version ==="
+        flutter --version
+        echo "=== Dart Version ==="
+        dart --version
     
     - name: Install dependencies
-      run: flutter pub get
+      run: |
+        export PATH="$HOME/flutter/bin:$PATH"
+        flutter pub get
     
     - name: Run Flutter Analyze
       id: analyze
       run: |
+        export PATH="$HOME/flutter/bin:$PATH"
         echo "Running Flutter analyze..."
         flutter analyze lib/ || echo "analyze_failed=true" >> $GITHUB_OUTPUT
         echo "quality=passed" >> $GITHUB_OUTPUT
     
     - name: Check Formatting
       run: |
+        export PATH="$HOME/flutter/bin:$PATH"
         echo "Checking code formatting..."
         flutter format --set-exit-if-changed lib/
     
@@ -68,16 +82,27 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: ${{ env.FLUTTER_VERSION }}
+    # Исправление здесь тоже
+    - name: Setup Flutter Manually
+      run: |
+        echo "Cloning Flutter repository for version ${{ env.FLUTTER_VERSION }}..."
+        git clone https://github.com/flutter/flutter.git --depth 1 --branch ${{ env.FLUTTER_VERSION }} $HOME/flutter
+        echo "$HOME/flutter/bin" >> $GITHUB_PATH
+    
+    - name: Verify Installation
+      run: |
+        export PATH="$HOME/flutter/bin:$PATH"
+        flutter --version
     
     - name: Install dependencies
-      run: flutter pub get
+      run: |
+        export PATH="$HOME/flutter/bin:$PATH"
+        flutter pub get
     
     - name: Run Tests
-      run: flutter test --coverage
+      run: |
+        export PATH="$HOME/flutter/bin:$PATH"
+        flutter test --coverage
     
     - name: Upload Coverage
       uses: codecov/codecov-action@v3
@@ -102,21 +127,33 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: ${{ env.FLUTTER_VERSION }}
+    # Исправление здесь тоже
+    - name: Setup Flutter Manually
+      run: |
+        echo "Cloning Flutter repository for version ${{ env.FLUTTER_VERSION }}..."
+        git clone https://github.com/flutter/flutter.git --depth 1 --branch ${{ env.FLUTTER_VERSION }} $HOME/flutter
+        echo "$HOME/flutter/bin" >> $GITHUB_PATH
+    
+    - name: Verify Installation
+      run: |
+        export PATH="$HOME/flutter/bin:$PATH"
+        flutter --version
     
     - name: Install dependencies
       run: |
+        export PATH="$HOME/flutter/bin:$PATH"
         flutter pub get
         echo "FLUTTER_VERSION=${{ env.FLUTTER_VERSION }}" >> $GITHUB_ENV
     
     - name: Build APK
-      run: flutter build apk --release --verbose
+      run: |
+        export PATH="$HOME/flutter/bin:$PATH"
+        flutter build apk --release --verbose
     
     - name: Build App Bundle
-      run: flutter build appbundle --release
+      run: |
+        export PATH="$HOME/flutter/bin:$PATH"
+        flutter build appbundle --release
     
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
@@ -137,4 +174,3 @@ jobs:
         echo "BUILD_DATE=$(date)" >> $GITHUB_ENV
         echo "BUILD_VERSION=${GITHUB_SHA::7}" >> $GITHUB_ENV
         echo "APP_NAME=${{ env.PROJECT_NAME }}" >> $GITHUB_ENV
-
