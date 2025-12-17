@@ -10,11 +10,10 @@ jobs:
   deploy:
     name: Deploy APK to Server
     runs-on: self-hosted
-
     environment:
       name: production
       url: http://192.168.0.7:8080/
-
+    
     if: |
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_branch == 'main'
@@ -37,7 +36,6 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          # Добавляем хост в known_hosts
           ssh-keyscan -T 5 -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Copy APK to server via scp
@@ -49,14 +47,14 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
             cd /var/www/flutter_builds
-
+            
             LATEST_APK=\$(ls -t app-*.apk | head -1)
             rm -f latest.apk
             ln -s \"\$LATEST_APK\" latest.apk
-
+            
             BUILD_DATE=\$(date '+%d.%m.%Y, %H:%M')
             APK_SIZE=\$(du -h latest.apk | cut -f1)
-
+            
             cat > index.html << 'HTML_EOF'
             <!DOCTYPE html>
             <html>
@@ -148,28 +146,27 @@ jobs:
             echo \"🌐 Ссылка: http://${{ secrets.SSH_HOST }}:8080/\"
           "
 
-    notify:
-      name: Discord Notification
-      runs-on: ubuntu-latest
-      needs: [deploy]  # ← ТОЛЬКО deploy
-      if: always()
+  notify:
+    name: Discord Notification
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always()
     
-      steps:
-        - name: Send Discord webhook
-          uses: sarisia/actions-status-discord@v1
-          env:
-            DEPLOY_URL: http://${{ secrets.SSH_HOST }}:8080/
-          with:
-            webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
-            title: "🚀 ${{ github.event.workflow_run.head_repository.full_name }} - Deploy Complete"
-            description: |
-              **Status:** ${{ job.status }}
-              **Branch:** ${{ github.event.workflow_run.head_branch }}
-              **Commit:** [${{ github.event.workflow_run.head_sha }}](${{ github.event.workflow_run.head_repository.html_url }}/commit/${{ github.event.workflow_run.head_sha }})
-              **Workflow:** [#${{ github.event.workflow_run.id }}](${{ github.event.workflow_run.html_url }})
+    steps:
+      - name: Send Discord webhook
+        uses: sarisia/actions-status-discord@v1
+        env:
+          DEPLOY_URL: http://${{ secrets.SSH_HOST }}:8080/
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          title: "🚀 ${{ github.event.workflow_run.head_repository.full_name }} - Deploy Complete"
+          description: |
+            **Status:** ${{ job.status }}
+            **Branch:** ${{ github.event.workflow_run.head_branch }}
+            **Commit:** [${{ github.event.workflow_run.head_sha }}](${{ github.event.workflow_run.head_repository.html_url }}/commit/${{ github.event.workflow_run.head_sha }})
+            **Workflow:** [#${{ github.event.workflow_run.id }}](${{ github.event.workflow_run.html_url }})
             
-              **📱 APK доступен по ссылке:**
-              ${{ env.DEPLOY_URL }}
-            color: ${{ job.status == 'success' && '00ff00' || 'ff0000' }}
-            username: "GitHub Actions Deploy"
-
+            **📱 APK доступен по ссылке:**
+            ${{ env.DEPLOY_URL }}
+          color: ${{ job.status == 'success' && '00ff00' || 'ff0000' }}
+          username: "GitHub Actions Deploy"
