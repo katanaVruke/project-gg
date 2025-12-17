@@ -60,7 +60,7 @@ jobs:
       run: |
         export PATH="$HOME/flutter/bin:$PATH"
         echo "Checking code formatting..."
-        flutter format --set-exit-if-changed lib/
+        dart format --output=none --set-exit-if-changed lib/
     
     - name: Debug Info
       if: always()
