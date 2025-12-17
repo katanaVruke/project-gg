@@ -1,22 +1,22 @@
 // lib/hub/hubMain.dart
-import 'package:Elite_KA/Hub/Achievements.dart';
-import 'package:Elite_KA/Hub/HubFive/HubFive.dart';
-import 'package:Elite_KA/Hub/HubFour/HubFour.dart';
-import 'package:Elite_KA/Hub/HubOne/HubOne.dart';
-import 'package:Elite_KA/Hub/HubThree/HubThree.dart';
-import 'package:Elite_KA/Hub/HubTwo/HubTwo.dart';
+import 'package:Elite_KA/hub/achievements.dart';
+import 'package:Elite_KA/hub/hubfive/hubfive.dart';
+import 'package:Elite_KA/hub/hubfour/hubfour.dart';
+import 'package:Elite_KA/hub/hubone/hubone.dart';
+import 'package:Elite_KA/hub/hubthree/hubthree.dart';
+import 'package:Elite_KA/hub/hubtwo/hubtwo.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:collection/collection.dart';
 
-class HubMain extends StatefulWidget {
-  const HubMain({super.key});
+class hubmain extends StatefulWidget {
+  const hubmain({super.key});
 
   @override
-  State<HubMain> createState() => _HubMainState();
+  State<hubmain> createState() => _HubMainState();
 }
 
-class _HubMainState extends State<HubMain> {
+class _HubMainState extends State<hubmain> {
   int _selectedIndex = 0;
 
   static const int _achievementsIndex = 5;
@@ -29,12 +29,12 @@ class _HubMainState extends State<HubMain> {
   List<String>? selectedEquipment;
 
   final List<Widget> _pages = [
-    const HubOne(),
-    const HubTwo(),
-    const HubThree(),
-    const HubFour(),
-    const HubFive(),
-    const Achievements(),
+    const hubone(),
+    const hubtwo(),
+    const hubthree(),
+    const hubfour(),
+    const hubfive(),
+    const achievements(),
   ];
 
   final List<int> _secretCombination = [2, 1, 3, 4, 4, 0];
