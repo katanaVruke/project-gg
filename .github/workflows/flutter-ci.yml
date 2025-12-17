@@ -173,8 +173,5 @@ jobs:
       run: |
         echo "BUILD_DATE=$(date)" >> $GITHUB_ENV
         echo "BUILD_VERSION=${GITHUB_SHA::7}" >> $GITHUB_ENV
-<<<<<<< HEAD
         echo "APP_NAME=${{ env.PROJECT_NAME }}" >> $GITHUB_ENV
-=======
         echo "APP_NAME=${{ env.PROJECT_NAME }}" >> $GITHUB_ENV
->>>>>>> 7ec932f04d5220640c60d5f90fb371676b0a5e47
