@@ -9,7 +9,7 @@ on:
   workflow_dispatch:  # Позволяет запускать вручную
 
 env:
-  FLUTTER_VERSION: '3.27.1'  # Изменено на версию, которая содержит Dart 3.9+
+  FLUTTER_VERSION: '3.35.5'  # Изменено на версию, которая содержит Dart 3.9+
   PROJECT_NAME: 'Project-GG'
 
 jobs:
