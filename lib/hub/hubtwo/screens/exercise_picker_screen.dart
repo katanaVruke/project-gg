@@ -1,5 +1,5 @@
 // lib/hub/hubtwo/screens/exercise_picker_screen.dart
-import 'package:Elite_KA/hub/hubThree/data/initial_exercises.dart' as initialData;
+import 'package:Elite_KA/hub/hubthree/data/initial_exercises.dart' as initialData;
 import 'package:Elite_KA/hub/hubthree/services/exercise_service.dart';
 import 'package:Elite_KA/hub/hubtwo/models/exercise.dart';
 import 'package:flutter/material.dart';

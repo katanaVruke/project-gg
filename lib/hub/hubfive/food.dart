@@ -1,6 +1,6 @@
 // lib/hub/hubFive/food.dart
 import 'dart:convert';
-import 'package:Elite_KA/Hub/HubFive/ingredients.dart';
+import 'package:Elite_KA/hub/hubfive/ingredients.dart';
 import 'package:Elite_KA/hub/hubfive/recepts.dart';
 import 'package:Elite_KA/supabase/supabase_helper.dart';
 import 'package:Elite_KA/supabase/supabase_service.dart';

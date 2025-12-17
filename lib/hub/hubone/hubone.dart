@@ -1,6 +1,6 @@
 // lib/hub/hubone/hubone.dart
-import 'package:Elite_KA/Hub/HubOne/Policy.dart';
-import 'package:Elite_KA/Hub/HubOne/ProfilePage.dart';
+import 'package:Elite_KA/hub/hubone/policy.dart';
+import 'package:Elite_KA/hub/hubone/profilepage.dart';
 import 'package:Elite_KA/hub/hubthree/services/exercise_service.dart';
 import 'package:Elite_KA/hub/hubtwo/services/workout_storage_service.dart';
 import 'package:Elite_KA/hub/hubtwo/services/completed_workout_storage_service.dart';

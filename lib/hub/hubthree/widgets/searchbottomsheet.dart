@@ -1,5 +1,5 @@
 //lib/hub/hubthree/widgets/searchbottomsheet.dart
-import 'package:Elite_KA/Hub/HubThree/pages/ExerciseDetailPage.dart';
+import 'package:Elite_KA/hub/hubthree/pages/exercisedetailpage.dart';
 import 'package:Elite_KA/hub/hubtwo/models/exercise.dart';
 import 'package:flutter/material.dart';
 

@@ -1,7 +1,7 @@
 // lib/hub/hubone/profilepage.dart
-import 'package:Elite_KA/hub/hubOne/fat.dart';
-import 'package:Elite_KA/hub/hubOne/target.dart';
-import 'package:Elite_KA/hub/hubOne/tools.dart';
+import 'package:Elite_KA/hub/hubone/fat.dart';
+import 'package:Elite_KA/hub/hubone/target.dart';
+import 'package:Elite_KA/hub/hubone/tools.dart';
 import 'package:Elite_KA/hub/hubone/activity.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
