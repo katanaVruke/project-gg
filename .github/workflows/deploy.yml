@@ -10,13 +10,11 @@ jobs:
   deploy:
     name: Deploy APK to Server
     runs-on: self-hosted
-    # --- Environment для отслеживания деплоев ---
+
     environment:
       name: production
       url: http://192.168.0.7:8080/
-    # -------------------------------------------
-    
-    # Условие запуска: ТОЛЬКО успешные сборки из ветки main (не теги!)
+
     if: |
       github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.head_branch == 'main'
@@ -153,27 +151,4 @@ jobs:
             echo \"🌐 Ссылка: http://${{ secrets.SSH_HOST }}:8080/\"
           "
 
-  notify:
-    name: Discord Notification
-    runs-on: ubuntu-latest
-    needs: [deploy]
-    if: always()
-    
-    steps:
-      - name: Send Discord webhook
-        uses: sarisia/actions-status-discord@v1
-        env:
-          DEPLOY_URL: http://${{ secrets.SSH_HOST }}:8080/
-        with:
-          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          title: "🚀 ${{ github.event.workflow_run.head_repository.full_name }} - Deploy Complete"
-          description: |
-            **Status:** ${{ job.status }}
-            **Branch:** ${{ github.event.workflow_run.head_branch }}
-            **Commit:** [${{ github.event.workflow_run.head_sha }}](${{ github.event.workflow_run.head_repository.html_url }}/commit/${{ github.event.workflow_run.head_sha }})
-            **Workflow:** [#${{ github.event.workflow_run.id }}](${{ github.event.workflow_run.html_url }})
-            
-            **📱 APK доступен по ссылке:**
-            ${{ env.DEPLOY_URL }}
-          color: ${{ job.status == 'success' && '00ff00' || 'ff0000' }}
-          username: "GitHub Actions Deploy"
+  
