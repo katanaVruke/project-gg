@@ -10,13 +10,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:collection/collection.dart';
 
 class HubMain extends StatefulWidget {
-  const hubmain({super.key});
+  const HubMain({super.key});
 
   @override
-  State<hubmain> createState() => _HubMainState();
+  State<HubMain> createState() => _HubMainState();
 }
 
-class _HubMainState extends State<hubmain> {
+class _HubMainState extends State<HubMain> {
   int _selectedIndex = 0;
 
   static const int _achievementsIndex = 5;
@@ -31,7 +31,7 @@ class _HubMainState extends State<hubmain> {
   final List<Widget> _pages = [
     const HubOne(),
     const HubTwo(),
-  //  const HubThree(),
+    const HubThree(),
     const HubFour(),
     const HubFive(),
     const Achievements(),

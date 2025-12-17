@@ -1,8 +1,8 @@
 //lib/hub/hubthree/hubthree.dart
-import 'package:Elite_KA/hub/Hubthree/pages/exercisedetailpage.dart';
-import 'package:Elite_KA/hub/Hubthree/widgets/filterbottomsheet.dart';
-import 'package:Elite_KA/hub/Hubthree/widgets/newexercisepage.dart';
-import 'package:Elite_KA/hub/Hubthree/widgets/searchbottomsheet.dart';
+import 'package:Elite_KA/hub/hubthree/pages/exercisedetailpage.dart';
+import 'package:Elite_KA/hub/hubthree/widgets/filterbottomsheet.dart';
+import 'package:Elite_KA/hub/hubthree/widgets/newexercisepage.dart';
+import 'package:Elite_KA/hub/hubthree/widgets/searchbottomsheet.dart';
 import 'package:Elite_KA/hub/hubthree/services/exercise_service.dart';
 import 'package:Elite_KA/hub/hubthree/data/initial_exercises.dart' as initialData;
 import 'package:Elite_KA/hub/hubtwo/models/exercise.dart';
