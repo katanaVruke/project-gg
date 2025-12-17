@@ -53,7 +53,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       if (mounted) {
         if (isRegistrationComplete) {
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const HubMain()),
+            MaterialPageRoute(builder: (context) => HubMain()),
           );
         } else {
           Navigator.of(context).pushReplacement(

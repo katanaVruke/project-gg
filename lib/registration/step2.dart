@@ -14,10 +14,10 @@ class step2 extends StatefulWidget {
   });
 
   @override
-  State<Step2> createState() => _Step2State();
+  State<step2> createState() => _Step2State();
 }
 
-class _Step2State extends State<Step2> {
+class _Step2State extends State<step2> {
   late int _ageSliderValue;
 
   @override
