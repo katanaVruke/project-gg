@@ -9,7 +9,7 @@ on:
   workflow_dispatch:  # Позволяет запускать вручную
 
 env:
-  FLUTTER_VERSION: '3.13.9'
+  FLUTTER_VERSION: '3.25.0'
   PROJECT_NAME: 'Project-GG'
 
 jobs:
