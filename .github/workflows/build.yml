@@ -13,6 +13,10 @@ env:
   PROJECT_NAME: 'Project-GG'
 
 jobs:
+<<<<<<< HEAD
+=======
+
+>>>>>>> 66430493cdc7e1b979a86ca6b24026a341676124
   lint:
     name: Lint and Analyze
     runs-on: ubuntu-latest
@@ -49,7 +53,11 @@ jobs:
       run: |
         export PATH="$HOME/flutter/bin:$PATH"
         echo "Running Flutter analyze..."
+<<<<<<< HEAD
         # НЕСТРОГИЙ РЕЖИМ
+=======
+        # СТАРЫЙ ВАРИАНТ (нестрогий) - просто показывает ошибки, но не падает
+>>>>>>> 66430493cdc7e1b979a86ca6b24026a341676124
         flutter analyze lib/ || echo "⚠️ Linter found issues (non-fatal mode)"
         echo "quality=passed" >> $GITHUB_OUTPUT
     
@@ -57,7 +65,11 @@ jobs:
       run: |
         export PATH="$HOME/flutter/bin:$PATH"
         echo "Checking code formatting..."
+<<<<<<< HEAD
         # НЕСТРОГИЙ РЕЖИМ
+=======
+        # СТАРЫЙ ВАРИАНТ - только показывает, какие файлы нужно отформатировать
+>>>>>>> 66430493cdc7e1b979a86ca6b24026a341676124
         dart format --output=none lib/ || echo "⚠️ Some files need formatting"
 
   test:
@@ -96,6 +108,10 @@ jobs:
         file: ./coverage/lcov.info
         fail_ci_if_error: false
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 66430493cdc7e1b979a86ca6b24026a341676124
   build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
@@ -148,6 +164,10 @@ jobs:
         path: build/app/outputs/bundle/release/app-release.aab
         retention-days: 7
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 66430493cdc7e1b979a86ca6b24026a341676124
   release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
@@ -183,6 +203,28 @@ jobs:
           prerelease: false
       
       - name: Log success
+<<<<<<< HEAD
         run: |
           echo "✅ Release ${{ github.ref_name }} created successfully!"
           echo "📦 Download: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+=======
+        run: |
+          echo "✅ Release ${{ github.ref_name }} created successfully!"
+          echo "📦 Download: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+
+      - name: Deploy Release APK to Server
+        run: |
+          # Копируем APK релиза на сервер (как в обычном деплое)
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          
+          # Переименовываем APK с версией тега
+          TAG_NAME="${{ github.ref_name }}"
+          mv app-release.apk "app-${TAG_NAME}.apk"
+          
+          # Копируем на сервер
+          scp -o ConnectTimeout=10 -i ~/.ssh/id_ed25519 "app-${TAG_NAME}.apk" ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/var/www/flutter_builds/
+          
+          echo "✅ Release APK deployed to server: app-${TAG_NAME}.apk"
+>>>>>>> 66430493cdc7e1b979a86ca6b24026a341676124
