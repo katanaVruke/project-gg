@@ -374,7 +374,7 @@ class _HubThreeState extends State<HubThree> {
           onPressed: () async {
             final newExercise = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const NewExercisePage()),
+              MaterialPageRoute(builder: (context) => NewExercisePage()),
             );
             if (newExercise is Exercise) {
               await _loadExercises();

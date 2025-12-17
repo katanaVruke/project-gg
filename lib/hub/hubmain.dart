@@ -29,12 +29,12 @@ class _HubMainState extends State<hubmain> {
   List<String>? selectedEquipment;
 
   final List<Widget> _pages = [
-    const hubone(),
-    const hubtwo(),
-    const hubthree(),
-    const hubfour(),
-    const hubfive(),
-    const achievements(),
+    const HubOne(),
+    const HubTwo(),
+    const HubThree(),
+    const HubFour(),
+    const HubFive(),
+    const Achievements(),
   ];
 
   final List<int> _secretCombination = [2, 1, 3, 4, 4, 0];

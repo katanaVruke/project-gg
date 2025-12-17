@@ -149,7 +149,7 @@ class _HubOneState extends State<HubOne> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const ProfilePage()),
+                          MaterialPageRoute(builder: (context) => ProfilePage()),
                         );
                       },
                       isSmallScreen: isSmallScreen,
@@ -359,7 +359,7 @@ class _HubOneState extends State<HubOne> {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const PolicyPage()),
+                    MaterialPageRoute(builder: (context) => PolicyPage()),
                   );
                 },
                 isSmallScreen,

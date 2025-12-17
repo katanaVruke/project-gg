@@ -463,7 +463,7 @@ class _HubFiveState extends State<HubFive> {
                   onPressed: () async {
                     await Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const FoodPage()),
+                      MaterialPageRoute(builder: (context) => FoodPage()),
                     );
                     refreshEatenToday();
                   },
