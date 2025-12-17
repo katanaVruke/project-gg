@@ -49,17 +49,14 @@ jobs:
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "
             cd /var/www/flutter_builds
-            
-            # Обновляем симлинк latest.apk
+
             LATEST_APK=\$(ls -t app-*.apk | head -1)
             rm -f latest.apk
             ln -s \"\$LATEST_APK\" latest.apk
-            
-            # Получаем информацию о сборке
+
             BUILD_DATE=\$(date '+%d.%m.%Y, %H:%M')
             APK_SIZE=\$(du -h latest.apk | cut -f1)
-            
-            # Создаём минималистичный HTML
+
             cat > index.html << 'HTML_EOF'
             <!DOCTYPE html>
             <html>
