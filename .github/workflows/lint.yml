@@ -1,3 +1,4 @@
+---
 name: Lint CI Config & Code
 
 on:
@@ -21,12 +22,12 @@ jobs:
           file_or_dir: '.github/workflows'
 
   flutter-lint:
-    runs-on: self-hosted  # Используем ваш раннер для экономии времени
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0'  # Исправленная версия!
+          flutter-version: '3.24.0'
       - run: flutter pub get
       - run: flutter analyze lib/
       - run: dart format --output=none --set-exit-if-changed lib/
