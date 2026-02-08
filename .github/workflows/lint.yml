@@ -1,0 +1,32 @@
+name: Lint CI Config & Code
+
+on:
+  push:
+    paths:
+      - '.github/workflows/**'
+      - 'lib/**'
+      - 'pubspec.yaml'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+
+jobs:
+  yaml-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint YAML files
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: '.github/workflows'
+
+  flutter-lint:
+    runs-on: self-hosted  # Используем ваш раннер для экономии времени
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'  # Исправленная версия!
+      - run: flutter pub get
+      - run: flutter analyze lib/
+      - run: dart format --output=none --set-exit-if-changed lib/

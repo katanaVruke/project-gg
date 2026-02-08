@@ -1,217 +1,84 @@
-name: Deploy to Server
+name: Deploy to Production
+
 on:
   workflow_run:
-    workflows: ["Build and Test"]
-    types:
-      - completed
+    workflows: ["Build Pipeline"]
+    types: [completed]
     branches: [main]
 
 jobs:
   deploy:
-    name: Deploy APK to Server
-    runs-on: self-hosted
-    environment:
-      name: production
-      url: http://192.168.0.3:8080/
-
-    # Условие: запускать при пуше тегов v* или вручную
+    runs-on: self-hosted  # Раннер на том же сервере!
+    environment: production
     if: |
-      github.event_name == 'workflow_run' && 
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'push' &&
-      startsWith(github.event.workflow_run.head_branch, 'refs/tags/v')
-
-    steps:
-      - name: Check server connectivity
-        run: |
-          echo "Testing connection to 192.168.0.3..."
-          ping -c 3 192.168.0.3 || echo "Ping failed but continuing..."
-          echo "Server IP: 192.168.0.3"
-
-      - name: Download APK from build workflow
-        uses: actions/download-artifact@v4
-        with:
-          name: android-apk
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Rename APK with timestamp
-        run: |
-          mv app-release.apk "app-$(date +'%Y%m%d-%H%M%S').apk"
-          APK_FILE=$(ls *.apk)
-          echo "APK renamed to: $APK_FILE"
-          echo "APK_FILE=$APK_FILE" >> $GITHUB_ENV
-
-      - name: Setup SSH connection
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          
-          # Добавляем сервер в known_hosts
-          ssh-keyscan -H 192.168.0.3 >> ~/.ssh/known_hosts 2>/dev/null
-          
-          # Тестируем подключение
-          ssh -o ConnectTimeout=5 -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@192.168.0.3 "echo 'SSH connection successful'" || \
-          echo "SSH test failed, but continuing..."
-
-      - name: Copy APK to server
-        run: |
-          echo "Copying APK to 192.168.0.3..."
-          scp -o ConnectTimeout=10 -i ~/.ssh/id_ed25519 *.apk ${{ secrets.SSH_USER }}@192.168.0.3:/var/www/flutter_builds/
-          echo "✅ APK copied to http://192.168.0.3:8080/"
-
-      - name: Update server webpage
-        run: |
-          ssh -o ConnectTimeout=10 -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@192.168.0.3 "
-            cd /var/www/flutter_builds
-            
-            # Находим последний APK
-            LATEST_APK=\$(ls -t app-*.apk 2>/dev/null | head -1)
-            if [ -z \"\$LATEST_APK\" ]; then
-              echo \"❌ No APK files found!\"
-              exit 0
-            fi
-            
-            # Создаем симлинк latest.apk
-            rm -f latest.apk
-            ln -s \"\$LATEST_APK\" latest.apk
-            
-            # Генерируем информацию
-            BUILD_DATE=\$(date '+%d.%m.%Y, %H:%M')
-            APK_SIZE=\$(du -h \"\$LATEST_APK\" 2>/dev/null | cut -f1)
-            APK_NAME=\"\$(echo \$LATEST_APK | sed 's/app-//;s/.apk//')\"
-            
-            # Создаем HTML страницу
-            cat > index.html << EOF
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset=\"UTF-8\">
-                <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-                <title>Flutter Builds - 192.168.0.3</title>
-                <style>
-                    body {
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-                        max-width: 600px;
-                        margin: 100px auto;
-                        padding: 40px;
-                        text-align: center;
-                        color: #333;
-                        background: #f8f9fa;
-                    }
-                    h1 {
-                        font-size: 2.8rem;
-                        margin-bottom: 10px;
-                        color: #2c3e50;
-                    }
-                    .subtitle {
-                        color: #7f8c8d;
-                        font-size: 1.2rem;
-                        margin-bottom: 40px;
-                    }
-                    .info {
-                        background: white;
-                        padding: 25px;
-                        border-radius: 12px;
-                        margin: 30px 0;
-                        border: 1px solid #e1e8ed;
-                        text-align: left;
-                    }
-                    .info p {
-                        margin: 10px 0;
-                        font-size: 1.1rem;
-                    }
-                    .download-btn {
-                        display: inline-block;
-                        background: #3498db;
-                        color: white;
-                        padding: 18px 40px;
-                        border-radius: 10px;
-                        font-size: 1.4rem;
-                        font-weight: 600;
-                        text-decoration: none;
-                        margin: 25px 0;
-                        transition: background 0.2s;
-                    }
-                    .download-btn:hover {
-                        background: #2980b9;
-                    }
-                    .size {
-                        color: #95a5a6;
-                        font-size: 0.9rem;
-                        margin-top: 10px;
-                    }
-                    .divider {
-                        height: 1px;
-                        background: #e1e8ed;
-                        margin: 30px 0;
-                    }
-                    .server-info {
-                        background: #e8f4fc;
-                        padding: 15px;
-                        border-radius: 8px;
-                        margin-top: 20px;
-                        font-family: monospace;
-                    }
-                </style>
-            </head>
-            <body>
-                <h1>Flutter Application</h1>
-                <p class=\"subtitle\">Automated Builds Server</p>
-                
-                <div class=\"info\">
-                    <p><strong>📅 Latest Build:</strong> \$BUILD_DATE</p>
-                    <p><strong>📱 Version:</strong> \$APK_NAME</p>
-                    <p><strong>📦 File:</strong> \$LATEST_APK</p>
-                    <p><strong>⚙️ Server:</strong> 192.168.0.3:8080</p>
-                </div>
-                
-                <div class=\"divider\"></div>
-                
-                <h2>Download Latest Version</h2>
-                <p>Always up-to-date build</p>
-                
-                <a href=\"latest.apk\" class=\"download-btn\">DOWNLOAD APK</a>
-                <p class=\"size\">(\$APK_SIZE)</p>
-                
-                <div class=\"server-info\">
-                    Server: 192.168.0.3:8080<br>
-                    Updated: \$BUILD_DATE<br>
-                    Total builds: \$(ls app-*.apk 2>/dev/null | wc -l)
-                </div>
-            </body>
-            </html>
-            EOF
-            
-            echo \"✅ Webpage updated successfully!\"
-            echo \"📱 Latest APK: \$LATEST_APK\"
-            echo \"🌐 Available at: http://192.168.0.3:8080/\"
-          "
-
-  notify:
-    name: Discord Notification
-    runs-on: ubuntu-latest
-    needs: [deploy]
-    if: always()
+      (github.event.workflow_run.event == 'push' && 
+       (github.event.workflow_run.head_ref == 'main' || 
+        startsWith(github.event.workflow_run.head_ref, 'refs/tags/v')))
     
     steps:
-      - name: Send Discord notification
+      - name: Debug environment
+        run: |
+          echo "Runner hostname: $(hostname)"
+          echo "Working directory: $(pwd)"
+          echo "Environment variables:"
+          env | sort
+      
+      # Артефакты уже на этой машине — просто копируем!
+      - name: Copy APK to web server
+        run: |
+          ARTIFACTS_DIR="${{ runner.temp }}/artifacts"
+          TARGET_DIR="/var/www/flutter_builds"
+          
+          # Находим последний APK
+          APK_FILE=$(ls $ARTIFACTS_DIR/*.apk | head -1)
+          TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
+          NEW_NAME="app-$TIMESTAMP.apk"
+          
+          cp "$APK_FILE" "$TARGET_DIR/$NEW_NAME"
+          ln -sf "$TARGET_DIR/$NEW_NAME" "$TARGET_DIR/latest.apk"
+          
+          echo "✅ Deployed: $NEW_NAME"
+          echo "URL: http://192.168.0.3:8080/latest.apk"
+      
+      # Обновление HTML-страницы
+      - name: Update index.html
+        run: |
+          cd /var/www/flutter_builds
+          LATEST=$(ls -t app-*.apk | head -1)
+          SIZE=$(du -h "$LATEST" | cut -f1)
+          DATE=$(date '+%d.%m.%Y %H:%M')
+          
+          cat > index.html << EOF
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Flutter Builds</title>
+            <meta charset="utf-8">
+          </head>
+          <body>
+            <h1>✅ Latest Build</h1>
+            <p><strong>Version:</strong> $LATEST</p>
+            <p><strong>Date:</strong> $DATE</p>
+            <p><strong>Size:</strong> $SIZE</p>
+            <a href="latest.apk" download>⬇️ Download APK</a>
+          </body>
+          </html>
+          EOF
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    steps:
+      - name: Discord Notification
         uses: sarisia/actions-status-discord@v1
-        env:
-          DEPLOY_URL: "http://192.168.0.3:8080/"
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          title: "🚀 Deploy Complete - 192.168.0.3"
+          title: "🚀 Deploy to 192.168.0.3"
           description: |
-            **Repository:** ${{ github.event.workflow_run.head_repository.full_name }}
-            **Status:** ${{ needs.deploy.result || 'unknown' }}
-            **Commit:** [${{ github.event.workflow_run.head_sha }}](${{ github.event.workflow_run.head_repository.html_url }}/commit/${{ github.event.workflow_run.head_sha }})
-            **Workflow:** [#${{ github.event.workflow_run.id }}](${{ github.event.workflow_run.html_url }})
-            
-            **📱 APK Download:**
-            http://192.168.0.3:8080/
-            
-            **Server:** 192.168.0.3:8080
-          color: ${{ needs.deploy.result == 'success' && '00ff00' || (needs.deploy.result == 'failure' && 'ff0000' || '808080') }}
-          username: "GitHub Actions - 192.168.0.3"
+            **Status:** `${{ needs.deploy.result }}`
+            **Version:** `${{ github.event.workflow_run.head_ref }}`
+            **Download:** http://192.168.0.3:8080/latest.apk
+            **Environment:** `production`
+          color: ${{ needs.deploy.result == 'success' && '34C759' || 'FF3B30' }}
